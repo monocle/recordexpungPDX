@@ -1,10 +1,5 @@
 import React from "react";
-import axios, {
-  AxiosPromise,
-  AxiosRequestConfig,
-  AxiosResponse,
-  AxiosError,
-} from "axios";
+import axios, { AxiosResponse, AxiosError } from "axios";
 import { HashLink as Link } from "react-router-hash-link";
 
 import ChargeTypeRule from "./ChargeTypeRule";
@@ -19,7 +14,6 @@ interface State {
 }
 
 export default class Rules extends React.Component<Props, State> {
-
   state = {
     rules: { charge_types: [] },
     loaded: false,
