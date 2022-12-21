@@ -84,7 +84,7 @@ function buildAndSendDownloadPdfRequest(dispatch: any): any {
     responseType: "blob",
   })
     .then((response: AxiosResponse) => {
-      const filename = response.headers["content-disposition"]
+      const filename = (response.headers["content-disposition"] ?? "")
         .split("filename=")[1]
         .split(" ")[0];
       fileDownload(response.data, filename);
@@ -301,7 +301,7 @@ export function downloadExpungementPacket(
       responseType: "blob",
     })
       .then((response: AxiosResponse) => {
-        const filename = response.headers["content-disposition"]
+        const filename = (response.headers["content-disposition"] ?? "")
           .split("filename=")[1]
           .split(" ")[0];
         fileDownload(response.data, filename);
