@@ -110,11 +110,7 @@ class PartnerTable extends React.Component<{}, any> {
         name: "Signs of Hope",
         area: "Medford",
         instructions: "Contact",
-        contacts: [
-          "Sarah Kolb",
-          "hope@janekolb.com",
-          "541-821-5577",
-        ],
+        contacts: ["Sarah Kolb", "hope@janekolb.com", "541-821-5577"],
         website: "https://www.janekolb.com",
       },
       {
@@ -162,7 +158,7 @@ class PartnerTable extends React.Component<{}, any> {
             <span className="w-70 db pr3 mb2 mb0-ns">{partner.name}</span>
             <span className="w-30 pr3">{partner.area}</span>
             <span className="absolute top-0 right-0 pt3 ph3">
-              {index == this.state.active ? (
+              {index === this.state.active ? (
                 <span aria-hidden="true" className="fas fa-angle-up"></span>
               ) : (
                 <span aria-hidden="true" className="fas fa-angle-down"></span>
@@ -208,7 +204,7 @@ class PartnerTable extends React.Component<{}, any> {
           <h3 className="f3 fw9 pv4 ph3">Partners</h3>
           <svg
             className="mr3"
-            style={{width: "55px", height: "40px"}}
+            style={{ width: "55px", height: "40px" }}
             aria-hidden="true"
             viewBox="0 0 110 80"
             fill="none"
