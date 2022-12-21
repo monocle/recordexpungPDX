@@ -1,4 +1,5 @@
-import currencyFormat from "./currency-format.ts";
+import currencyFormat from "./currency-format";
+
 describe("CURRENCY FORMAT SERVICE TEST", () => {
   it("formats currency", () => {
     var currencyString = currencyFormat(145);
