@@ -19,7 +19,7 @@ describe("API SERVICE TEST", () => {
     });
   });
 
-  it("returns with error on bad base url", (done) => {
+  it("returns with error on bad base url", (done: DoneCallback) => {
     const request: AxiosRequestConfig = {
       url: "http://:5000/api/",
       method: "get",
@@ -32,7 +32,7 @@ describe("API SERVICE TEST", () => {
     });
   });
 
-  it("returns with 404 error on bad route", (done) => {
+  it("returns with 404 error on bad route", (done: DoneCallback) => {
     const request: AxiosRequestConfig = {
       url: "http://localhost:5000/api/ello",
       method: "get",
@@ -45,7 +45,7 @@ describe("API SERVICE TEST", () => {
     });
   });
 
-  it("returns search in JSON", (done) => {
+  it("returns search in JSON", (done: DoneCallback) => {
     const request: AxiosRequestConfig = {
       url: "http://localhost:5000/api/search",
       method: "post",
