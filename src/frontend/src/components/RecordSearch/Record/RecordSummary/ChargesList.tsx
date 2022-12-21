@@ -1,5 +1,4 @@
 import React from "react";
-import { Link } from "react-router-dom";
 
 interface Props {
   eligibleChargesByDate: { [label: string]: any[] };
@@ -64,7 +63,7 @@ export default class ChargesList extends React.Component<Props> {
           );
         }
       );
-      if ( caseHeaderWithBalance ) {
+      if (caseHeaderWithBalance) {
         return (
           <>
             <li className="fw7 pt2">{caseHeaderWithBalance}</li>
@@ -72,11 +71,7 @@ export default class ChargesList extends React.Component<Props> {
           </>
         );
       } else {
-        return (
-          <>
-            {listItemsInCase}
-          </>
-        );
+        return <>{listItemsInCase}</>;
       }
     });
   }
