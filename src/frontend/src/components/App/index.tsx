@@ -18,32 +18,77 @@ import PartnerInterest from "../PartnerInterest";
 import AccessibilityStatement from "../AccessibilityStatement";
 import About from "../About";
 
-class App extends React.Component {
-  redirect = () => <Redirect to="/" />;
-  public render() {
-    return (
-      <Router history={history}>
-        <Header />
-        <Switch>
-          <Route component={Landing} exact={true} path="/" />
-          <Route component={OeciLogin} path="/oeci" />
-          <Route component={RecordSearch} path="/record-search" />
-          <Route component={Demo} path="/demo-record-search" />
-          <Route component={Manual} path="/manual" />
-          <Route component={Rules} path="/rules" />
-          <Route component={Faq} path="/faq" />
-          <Route component={Appendix} path="/appendix" />
-          <Route component={PrivacyPolicy} path="/privacy-policy" />
-          <Route component={FillForms} path="/fill-expungement-forms" />
-          <Route component={PartnerInterest} path="/partner-interest" />
-          <Route component={AccessibilityStatement} path="/accessibility-statement" />
-          <Route component={About} path="/about" />
-          <Route render={this.redirect} />
-        </Switch>
-        <Footer />
-      </Router>
-    );
-  }
+function App() {
+  return (
+    <Router history={history}>
+      <Header />
+      <Switch>
+        <Route exact path="/">
+          <Landing />
+        </Route>
+
+        <Route path="/oeci">
+          <OeciLogin
+            userId=""
+            password=""
+            missingUserId={false}
+            missingPassword={false}
+            expectedFailure={false}
+            expectedFailureMessage=""
+            invalidResponse={false}
+            missingInputs={false}
+          />
+        </Route>
+
+        <Route path="/record-search">
+          <RecordSearch />
+        </Route>
+
+        <Route path="/demo-record-search">
+          <Demo />
+        </Route>
+
+        <Route path="/manual">
+          <Manual />
+        </Route>
+
+        <Route path="/rules">
+          <Rules />
+        </Route>
+
+        <Route path="/faq">
+          <Faq />
+        </Route>
+
+        <Route path="/appendix">
+          <Appendix />
+        </Route>
+
+        <Route path="/privacy-policy">
+          <PrivacyPolicy />
+        </Route>
+
+        <Route path="/fill-expungement-forms">
+          <FillForms />
+        </Route>
+
+        <Route path="/partner-interest">
+          <PartnerInterest email="" invalidEmail={true} />
+        </Route>
+
+        <Route path="/accessibility-statement">
+          <AccessibilityStatement />
+        </Route>
+
+        <Route path="/about">
+          <About />
+        </Route>
+
+        <Route render={() => <Redirect to="/" />} />
+      </Switch>
+      <Footer />
+    </Router>
+  );
 }
 
 export default App;
