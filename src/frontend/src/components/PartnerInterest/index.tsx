@@ -8,8 +8,7 @@ interface State {
 }
 
 export default class PartnerInterest extends React.Component<State> {
-
-  componentDidMount(){
+  componentDidMount() {
     document.title = "Partner with us - RecordSponge";
   }
 
@@ -53,8 +52,8 @@ export default class PartnerInterest extends React.Component<State> {
               </p>
               <p className="mb2">
                 You will need an Oregon eCourt Case Information (OECI) account
-                to search for criminal records with RecordSponge, otherwise there 
-                is no additional charge.
+                to search for criminal records with RecordSponge, otherwise
+                there is no additional charge.
               </p>
               <p className="mb4">
                 <a
@@ -66,8 +65,8 @@ export default class PartnerInterest extends React.Component<State> {
                 .
               </p>
               <p className="mb2">
-                No OECI account yet? The demo version has all the same features 
-                besides the ability to search the OECI database. There are 
+                No OECI account yet? The demo version has all the same features
+                besides the ability to search the OECI database. There are
                 examples provided or you can even enter records manually.
               </p>
               <p className="mb4">
@@ -167,14 +166,12 @@ export default class PartnerInterest extends React.Component<State> {
                       </div>
                       <div id="mce-responses" className="clear">
                         <div
-                          className="response"
+                          className="response visually-hidden"
                           id="mce-error-response"
-                          visually-hidden
                         ></div>
                         <div
-                          className="response"
+                          className="response visually-hidden"
                           id="mce-success-response"
-                          visually-hidden
                         ></div>
                       </div>{" "}
                       {/*This div captures bot signups, according to Mailchimp.*/}
