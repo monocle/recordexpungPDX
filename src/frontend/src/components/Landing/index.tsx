@@ -89,21 +89,19 @@ class Landing extends React.Component {
                       <p className="lh-copy pt3">
                         For other communication (to learn more, help out, etc.)
                         you can also contact:
-                        <ul className="ml4 mt2">
-                          <li className="mb2">
-                            Michael Zhang, expungement attorney at Qiu-Qiu Law:{" "}
-                            <span className="nowrap">
-                              michael@qiu-qiulaw.com
-                            </span>
-                          </li>
-                          <li>
-                            Jordan Witte, project manager at Code for PDX:{" "}
-                            <span className="nowrap">
-                              jordan.witte@codeforpdx.org
-                            </span>
-                          </li>
-                        </ul>
                       </p>
+                      <ul className="ml4 mt2">
+                        <li className="mb2">
+                          Michael Zhang, expungement attorney at Qiu-Qiu Law:{" "}
+                          <span className="nowrap">michael@qiu-qiulaw.com</span>
+                        </li>
+                        <li>
+                          Jordan Witte, project manager at Code for PDX:{" "}
+                          <span className="nowrap">
+                            jordan.witte@codeforpdx.org
+                          </span>
+                        </li>
+                      </ul>
                     </DisclosurePanel>
                   </div>
                 </Disclosure>
