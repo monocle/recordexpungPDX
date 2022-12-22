@@ -1,6 +1,6 @@
 import apiService from "./api-service";
 import { hasOeciToken } from "./cookie-service";
-import history from "./history";
+import { redirect } from "react-router-dom";
 
 export default function oeciLogIn(username: string, password: string): any {
   return apiService(() => {}, {
@@ -10,7 +10,7 @@ export default function oeciLogIn(username: string, password: string): any {
     withCredentials: true,
   }).then((response: any) => {
     if (hasOeciToken()) {
-      history.push("/record-search");
+      redirect("/record-search");
     }
   });
 }

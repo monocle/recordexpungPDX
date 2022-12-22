@@ -5,7 +5,7 @@ import CountyFines from "./CountyFines";
 import { AppState } from "../../../../redux/store";
 import { RecordSummaryData } from "../types";
 import { downloadPdf } from "../../../../redux/search/actions";
-import history from "../../../../service/history";
+import { redirect } from "react-router-dom";
 
 interface Props {
   downloadPdf: Function;
@@ -27,10 +27,13 @@ class RecordSummary extends React.Component<Props, State> {
 
   handleGenerateFormsClick = () => {
     if (
-      this.props.summary.charges_grouped_by_eligibility_and_case["Eligible Now"] &&
-      this.props.summary.charges_grouped_by_eligibility_and_case["Eligible Now"].length > 0
+      this.props.summary.charges_grouped_by_eligibility_and_case[
+        "Eligible Now"
+      ] &&
+      this.props.summary.charges_grouped_by_eligibility_and_case["Eligible Now"]
+        .length > 0
     ) {
-      history.push("/fill-expungement-forms");
+      redirect("/fill-expungement-forms");
     } else {
       this.setState({ cantGenerateForms: true });
     }

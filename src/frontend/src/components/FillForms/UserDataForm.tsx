@@ -1,5 +1,5 @@
 import React from "react";
-import history from "../../service/history";
+import { redirect } from "react-router-dom";
 import { downloadExpungementPacket } from "../../redux/search/actions";
 import { connect } from "react-redux";
 import { AppState } from "../../redux/store";
@@ -119,7 +119,7 @@ class UserDataForm extends React.Component<Props, State> {
 
   public componentDidMount() {
     if (!(this.props.aliases.length > 0)) {
-      history.push("/record-search");
+      redirect("/record-search");
     }
   }
 

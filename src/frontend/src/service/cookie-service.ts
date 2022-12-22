@@ -1,4 +1,4 @@
-import history from "../service/history";
+import { redirect } from "react-router-dom";
 
 interface Cookie {
   [key: string]: string;
@@ -35,6 +35,6 @@ export function isAdmin() {
 
 export function checkOeciRedirect() {
   if (!hasOeciToken()) {
-    history.push("/oeci");
+    redirect("/oeci");
   }
 }

@@ -1,6 +1,5 @@
 import React from "react";
-import { Redirect, Route, Router, Switch } from "react-router-dom";
-import history from "../../service/history";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import Footer from "../Footer";
 import Header from "../Header";
@@ -20,74 +19,59 @@ import About from "../About";
 
 function App() {
   return (
-    <Router history={history}>
+    <BrowserRouter>
       <Header />
-      <Switch>
-        <Route exact path="/">
-          <Landing />
-        </Route>
+      <Routes>
+        <Route path="/" element={<Landing />} />
 
-        <Route path="/oeci">
-          <OeciLogin
-            userId=""
-            password=""
-            missingUserId={false}
-            missingPassword={false}
-            expectedFailure={false}
-            expectedFailureMessage=""
-            invalidResponse={false}
-            missingInputs={false}
-          />
-        </Route>
+        <Route
+          path="/oeci"
+          element={
+            <OeciLogin
+              userId=""
+              password=""
+              missingUserId={false}
+              missingPassword={false}
+              expectedFailure={false}
+              expectedFailureMessage=""
+              invalidResponse={false}
+              missingInputs={false}
+            />
+          }
+        />
 
-        <Route path="/record-search">
-          <RecordSearch />
-        </Route>
+        <Route path="/record-search" element={<RecordSearch />} />
 
-        <Route path="/demo-record-search">
-          <Demo />
-        </Route>
+        <Route path="/demo-record-search" element={<Demo />} />
 
-        <Route path="/manual">
-          <Manual />
-        </Route>
+        <Route path="/manual" element={<Manual />} />
 
-        <Route path="/rules">
-          <Rules />
-        </Route>
+        <Route path="/rules" element={<Rules />} />
 
-        <Route path="/faq">
-          <Faq />
-        </Route>
+        <Route path="/faq" element={<Faq />} />
 
-        <Route path="/appendix">
-          <Appendix />
-        </Route>
+        <Route path="/appendix" element={<Appendix />} />
 
-        <Route path="/privacy-policy">
-          <PrivacyPolicy />
-        </Route>
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
 
-        <Route path="/fill-expungement-forms">
-          <FillForms />
-        </Route>
+        <Route path="/fill-expungement-forms" element={<FillForms />} />
 
-        <Route path="/partner-interest">
-          <PartnerInterest email="" invalidEmail={true} />
-        </Route>
+        <Route
+          path="/partner-interest"
+          element={<PartnerInterest email="" invalidEmail={true} />}
+        />
 
-        <Route path="/accessibility-statement">
-          <AccessibilityStatement />
-        </Route>
+        <Route
+          path="/accessibility-statement"
+          element={<AccessibilityStatement />}
+        />
 
-        <Route path="/about">
-          <About />
-        </Route>
+        <Route path="/about" element={<About />} />
 
-        <Route render={() => <Redirect to="/" />} />
-      </Switch>
+        {/* <Route render={() => <Redirect to="/" />} /> */}
+      </Routes>
       <Footer />
-    </Router>
+    </BrowserRouter>
   );
 }
 
