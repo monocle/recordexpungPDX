@@ -49,7 +49,7 @@ class SearchPanel extends React.Component<Props, State> {
   };
 
   validateForm = () => {
-    return new Promise((resolve) => {
+    return new Promise((resolve: (value?: unknown) => void) => {
       let missingInputs: boolean = false;
       let invalidFirstNameWildcard: boolean = false;
       let invalidLastNameWildcard: boolean = false;
@@ -106,9 +106,8 @@ class SearchPanel extends React.Component<Props, State> {
   };
 
   addAlias = () => {
-    const lastAlias: AliasData = this.state.aliases[
-      this.state.aliases.length - 1
-    ];
+    const lastAlias: AliasData =
+      this.state.aliases[this.state.aliases.length - 1];
     let updatedAliases = JSON.parse(JSON.stringify(this.state.aliases));
     updatedAliases.push({
       first_name: lastAlias.first_name,

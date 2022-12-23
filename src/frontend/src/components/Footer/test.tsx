@@ -28,7 +28,7 @@ it("has two anchors", () => {
   expect(count).toBe(2);
 });
 
-it("has a Terms anchor", (done: DoneCallback) => {
+it("has a Terms anchor", (done) => {
   const component = renderer.create(<Footer />);
   const tree = component.toJSON() as IJestTree;
 
@@ -45,7 +45,7 @@ it("has a Terms anchor", (done: DoneCallback) => {
   test();
 });
 
-it("has a Copyright anchor", (done: DoneCallback) => {
+it("has a Copyright anchor", (done) => {
   const component = renderer.create(<Footer />);
   const tree = component.toJSON() as IJestTree;
   function test() {
