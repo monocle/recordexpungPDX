@@ -1,5 +1,5 @@
 import React from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Navigate, Routes, Route } from "react-router-dom";
 
 import Footer from "../Footer";
 import Header from "../Header";
@@ -68,7 +68,7 @@ function App() {
 
         <Route path="/about" element={<About />} />
 
-        {/* <Route render={() => <Redirect to="/" />} /> */}
+        <Route path="*" element={<Navigate to="/" />} />
       </Routes>
       <Footer />
     </BrowserRouter>
