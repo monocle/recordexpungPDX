@@ -5,7 +5,7 @@ import {
   Disclosure,
   DisclosureButton,
   DisclosurePanel,
-} from "@reach/disclosure";
+} from "../../vendor/@reach/disclosure";
 
 class Landing extends React.Component {
   componentDidMount() {

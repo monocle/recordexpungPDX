@@ -3,7 +3,8 @@ import {
   Disclosure,
   DisclosureButton,
   DisclosurePanel,
-} from "@reach/disclosure";
+} from "../../vendor/@reach/disclosure";
+
 import { HashLink as Link } from "react-router-hash-link";
 
 class PartnerTable extends React.Component<{}, any> {

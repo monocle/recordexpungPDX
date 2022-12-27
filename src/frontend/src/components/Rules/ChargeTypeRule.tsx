@@ -3,7 +3,7 @@ import {
   Disclosure,
   DisclosureButton,
   DisclosurePanel,
-} from "@reach/disclosure";
+} from "../../vendor/@reach/disclosure";
 
 export interface TypeRuleData {
   charge_type_name: string;

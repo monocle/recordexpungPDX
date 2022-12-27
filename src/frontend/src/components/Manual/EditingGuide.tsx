@@ -4,7 +4,7 @@ import {
   Disclosure,
   DisclosureButton,
   DisclosurePanel,
-} from "@reach/disclosure";
+} from "../../vendor/@reach/disclosure";
 
 import AddButton from "../RecordSearch/Record/AddButton";
 import EditButton from "../RecordSearch/Record/EditButton";
@@ -30,9 +30,7 @@ export default class EditingGuide extends React.Component<Props, State> {
           }}
         >
           <div className="bg-gray-blue-2 shadow br3 pa3 mb3">
-            <h3 className="f3 fw7 mb2">
-              Editing Results
-            </h3>
+            <h3 className="f3 fw7 mb2">Editing Results</h3>
             <p className="mb2">
               RecordSponge allows in-line editing of search results to correct
               any errors or missing information. This is an advanced feature.
@@ -54,9 +52,7 @@ export default class EditingGuide extends React.Component<Props, State> {
               </span>
             </DisclosureButton>
             <DisclosurePanel className="pt3">
-              <h3 className="f4 fw7 mb2">
-                Why Edit
-              </h3>
+              <h3 className="f4 fw7 mb2">Why Edit</h3>
               <section className="mb4">
                 <p className="mb3">
                   Sometimes the result of a Search doesn’t completely match a
@@ -70,9 +66,9 @@ export default class EditingGuide extends React.Component<Props, State> {
                     appear in the search result.
                   </li>
                   <li className="mb3 pb1">
-                    One or more of a person’s cases cannot be found: If the record
-                    has a typo in the name or the incorrect birth date, it can be
-                    difficult to locate by searching OECI.
+                    One or more of a person’s cases cannot be found: If the
+                    record has a typo in the name or the incorrect birth date,
+                    it can be difficult to locate by searching OECI.
                   </li>
                   <li className="mb3 pb1">
                     A charge date or other piece of information for a particular
@@ -81,20 +77,18 @@ export default class EditingGuide extends React.Component<Props, State> {
                   <li className="mb3 pb1">
                     The expungement analyzer could not classify the charge: Many
                     of the records in OECI are older and have statutes that have
-                    been renumbered or repealed; or a charge has an irregular name
-                    not recognized by our analyzer.
+                    been renumbered or repealed; or a charge has an irregular
+                    name not recognized by our analyzer.
                   </li>
                 </ol>
                 <p className="mb3">
                   If any of these issues appear in the record, they can be
-                  corrected with the Editing feature. You can also use the Editing
-                  feature to build a record from scratch and run an analysis
-                  without relying on OECI at all. Editing is built directly in to
-                  the main Search feature.
+                  corrected with the Editing feature. You can also use the
+                  Editing feature to build a record from scratch and run an
+                  analysis without relying on OECI at all. Editing is built
+                  directly in to the main Search feature.
                 </p>
-                <h3 className="f4 fw7 mb2">
-                  Enable Editing
-                </h3>
+                <h3 className="f4 fw7 mb2">Enable Editing</h3>
                 <p className="mb3">
                   Click the Enable Editing button on the Record Search page:
                 </p>
@@ -102,16 +96,14 @@ export default class EditingGuide extends React.Component<Props, State> {
                   Enable Editing
                 </button>
                 <p className="mb3">
-                  You can now perform the following actions to change the contents
-                  of the record. These changes exist only temporarily in your
-                  session and will disappear if you run another search. The edits
-                  will persist if you navigate between Search and the Manual or
-                  other pages on recordsponge.com, but they will disappear if you
-                  leave the website.
+                  You can now perform the following actions to change the
+                  contents of the record. These changes exist only temporarily
+                  in your session and will disappear if you run another search.
+                  The edits will persist if you navigate between Search and the
+                  Manual or other pages on recordsponge.com, but they will
+                  disappear if you leave the website.
                 </p>
-                <h3 className="f4 fw7 mb2">
-                  Add Case
-                </h3>
+                <h3 className="f4 fw7 mb2">Add Case</h3>
                 <p className="mb3">
                   Click the Add Case button just below the Summary panel:
                 </p>
@@ -124,12 +116,10 @@ export default class EditingGuide extends React.Component<Props, State> {
                   Status, County, Balance, and Birth Year, all of which are used
                   to provide complete analysis of the record.
                 </p>
-                <h3 className="f4 fw7 mb2">
-                  Edit Case
-                </h3>
+                <h3 className="f4 fw7 mb2">Edit Case</h3>
                 <p className="mb3">
-                  You can edit any of these fields on an existing or newly created
-                  case by clicking the edit button in the case's header.
+                  You can edit any of these fields on an existing or newly
+                  created case by clicking the edit button in the case's header.
                 </p>
                 <div className="ml3 mb3">
                   <EditButton onClick={() => {}} actionName="Edit Case" />
@@ -153,13 +143,11 @@ export default class EditingGuide extends React.Component<Props, State> {
                     showEditButtons={true}
                   />
                 </div>
-                <h3 className="f4 fw7 mb2">
-                  Add Charge
-                </h3>
+                <h3 className="f4 fw7 mb2">Add Charge</h3>
                 <p className="mb2">
                   Next to the Edit Case{" "}
-                  <EditButton onClick={() => {}} actionName="Edit Case" /> button
-                  is another Add{" "}
+                  <EditButton onClick={() => {}} actionName="Edit Case" />{" "}
+                  button is another Add{" "}
                   <span className="mh1">
                     {" "}
                     <AddButton
@@ -172,14 +160,14 @@ export default class EditingGuide extends React.Component<Props, State> {
                   existing case.
                 </p>
                 <p className="mb2">
-                  For an existing charge, you can also the information by clicking
-                  the Edit
+                  For an existing charge, you can also the information by
+                  clicking the Edit
                   <EditButton onClick={() => {}} actionName="Edit Case" />
                   button on that charge.
                 </p>
                 <p className="mb2">
-                  Both of these operations open a similar panel to allow creating
-                  or editing the charge:
+                  Both of these operations open a similar panel to allow
+                  creating or editing the charge:
                 </p>
 
                 <div className="bg-gray-blue-2 shadow br3 overflow-auto mb4">
@@ -201,8 +189,8 @@ export default class EditingGuide extends React.Component<Props, State> {
                     {" "}
                     Charge Types{" "}
                   </Link>{" "}
-                  so that you can accurately select a charge type for each new or
-                  edited charge.
+                  so that you can accurately select a charge type for each new
+                  or edited charge.
                 </p>
               </section>
             </DisclosurePanel>

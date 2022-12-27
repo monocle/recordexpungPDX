@@ -3,7 +3,7 @@ import {
   Disclosure,
   DisclosureButton,
   DisclosurePanel,
-} from "@reach/disclosure";
+} from "../../../vendor/@reach/disclosure";
 
 import { buildRule } from "../../Rules/ChargeTypeRule";
 
