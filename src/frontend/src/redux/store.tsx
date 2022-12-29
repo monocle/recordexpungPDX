@@ -19,3 +19,5 @@ const store = configureStore({
 export type AppState = ReturnType<typeof rootReducer>;
 
 export default store;
+
+export type RootState = ReturnType<typeof store.getState>;
