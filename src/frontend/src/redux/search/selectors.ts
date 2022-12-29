@@ -1,4 +1,4 @@
-import { createSelector } from "reselect";
+import { createSelector } from "@reduxjs/toolkit";
 import { CaseData } from "../../components/RecordSearch/Record/types";
 import { AppState } from "../store";
 
