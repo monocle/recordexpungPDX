@@ -1,5 +1,5 @@
 import React from "react";
-import { BrowserRouter, Navigate, Routes, Route } from "react-router-dom";
+import { Navigate, Routes, Route } from "react-router-dom";
 
 import Footer from "../Footer";
 import Header from "../Header";
@@ -19,7 +19,7 @@ import About from "../About";
 
 function App() {
   return (
-    <BrowserRouter>
+    <>
       <Header />
       <Routes>
         <Route path="/" element={<Landing />} />
@@ -71,7 +71,7 @@ function App() {
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
       <Footer />
-    </BrowserRouter>
+    </>
   );
 }
 
