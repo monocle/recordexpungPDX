@@ -146,6 +146,10 @@ interface ExpungementPacketActionComplete {
   type: typeof LOADING_EXPUNGEMENT_PACKET_COMPLETE;
 }
 
+interface DemoAction {
+  type: typeof START_DEMO | typeof STOP_DEMO;
+}
+
 export type SearchRecordActionType =
   | SearchRecordAction
   | QuestionsAction
@@ -158,4 +162,5 @@ export type SearchRecordActionType =
   | StartEditingAction
   | DoneEditingAction
   | ExpungementPacketAction
-  | ExpungementPacketActionComplete;
+  | ExpungementPacketActionComplete
+  | DemoAction;

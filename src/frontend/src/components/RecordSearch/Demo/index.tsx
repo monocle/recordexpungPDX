@@ -1,19 +1,14 @@
-import React from "react";
+import React, { useEffect } from "react";
 import RecordSearch from "../../RecordSearch";
+import { useAppDispatch } from "../../../redux/hooks";
 import { startDemo } from "../../../redux/search/actions";
-import store from "../../../redux/store";
-import { connect } from "react-redux";
 
-interface Props {
-  startDemo: Function;
-}
-class Demo extends React.Component<Props> {
-  componentDidMount() {
-    store.dispatch(this.props.startDemo());
-  }
-  render() {
-    return <RecordSearch />;
-  }
-}
+export default function Demo() {
+  const dispatch = useAppDispatch();
 
-export default connect(() => {}, { startDemo })(Demo);
+  useEffect(() => {
+    dispatch(startDemo());
+  });
+
+  return <RecordSearch />;
+}
