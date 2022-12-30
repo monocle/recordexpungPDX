@@ -110,7 +110,7 @@ export function startDemo() {
 export function stopDemo() {
   return {
     type: STOP_DEMO,
-  };
+  } as SearchRecordActionType;
 }
 
 export function downloadPdf() {
