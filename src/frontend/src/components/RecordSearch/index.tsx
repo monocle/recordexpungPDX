@@ -1,5 +1,4 @@
 import React, { useEffect } from "react";
-import { connect, useSelector } from "react-redux";
 import SearchPanel from "./SearchPanel";
 import Record from "./Record";
 import Status from "./Status";
@@ -7,12 +6,12 @@ import DemoInfo from "./Demo/DemoInfo";
 import { hasOeciToken } from "../../service/cookie-service";
 import { HashLink as Link } from "react-router-hash-link";
 import { useNavigate } from "react-router-dom";
-import { RootState } from "../../redux/store";
+import { useAppSelector } from "../../redux/hooks";
 
-function RecordSearch() {
+export default function RecordSearch() {
   const navigate = useNavigate();
-  const record = useSelector((state: RootState) => state.search.record);
-  const demo = useSelector((state: RootState) => state.search.demo);
+  const record = useAppSelector((state) => state.search.record);
+  const demo = useAppSelector((state) => state.search.demo);
 
   useEffect(() => {
     if (!demo || !hasOeciToken()) {
@@ -62,5 +61,3 @@ function RecordSearch() {
     </>
   );
 }
-
-export default connect(null, {})(RecordSearch);
