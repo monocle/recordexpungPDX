@@ -16,6 +16,7 @@ describe("On landing", () => {
   });
 
   it("displays the landing page header", () => {
+    expect(global.window.document.title).toBe("Home - RecordSponge");
     expect(
       screen.getByText(/Making Record Expungement Affordable/i)
     ).toBeInTheDocument();
@@ -25,6 +26,7 @@ describe("On landing", () => {
     const user = userEvent.setup();
     await user.click(screen.getAllByText(/manual/i)[0]);
 
+    expect(global.window.document.title).toBe("Manual - RecordSponge");
     expect(screen.getAllByText(/introduction/i)[0]).toBeInTheDocument();
     expect(screen.getAllByText(/general info/i)[0]).toBeInTheDocument();
   });
@@ -33,6 +35,7 @@ describe("On landing", () => {
     const user = userEvent.setup();
     await user.click(screen.getAllByText(/about us/i)[0]);
 
+    expect(global.window.document.title).toBe("About - RecordSponge");
     expect(screen.getAllByText(/our mission/i)[0]).toBeInTheDocument();
     expect(screen.getAllByText(/our team/i)[0]).toBeInTheDocument();
   });
@@ -41,6 +44,7 @@ describe("On landing", () => {
     const user = userEvent.setup();
     await user.click(screen.getAllByText(/hey partner/i)[0]);
 
+    expect(global.window.document.title).toBe("Partner with us - RecordSponge");
     expect(
       screen.getAllByText(/provide expungement help/i)[0]
     ).toBeInTheDocument();
@@ -51,6 +55,9 @@ describe("On landing", () => {
     const user = userEvent.setup();
     await user.click(screen.getAllByText(/FAQ/)[0]);
 
+    expect(global.window.document.title).toBe(
+      "Frequently Asked Questions - RecordSponge"
+    );
     expect(screen.getAllByText(/FAQ/)[0]).toBeInTheDocument();
     expect(screen.getAllByText(/Myth/i)[0]).toBeInTheDocument();
   });
@@ -59,6 +66,7 @@ describe("On landing", () => {
     const user = userEvent.setup();
     await user.click(screen.getAllByText(/appendix/i)[0]);
 
+    expect(global.window.document.title).toBe("Appendix - RecordSponge");
     expect(screen.getAllByText(/appendix/i)[0]).toBeInTheDocument();
     expect(
       screen.getAllByText(/forms to file for expungement/i)[0]
@@ -69,6 +77,9 @@ describe("On landing", () => {
     const user = userEvent.setup();
     await user.click(screen.getAllByText(/accessibility statement/i)[0]);
 
+    expect(global.window.document.title).toBe(
+      "Accessibility Statement - RecordSponge"
+    );
     expect(
       screen.getAllByText(/accessibility statement/i)[0]
     ).toBeInTheDocument();
@@ -79,6 +90,7 @@ describe("On landing", () => {
     const user = userEvent.setup();
     await user.click(screen.getAllByText(/privacy policy/i)[0]);
 
+    expect(global.window.document.title).toBe("Privacy Policy - RecordSponge");
     expect(screen.getAllByText(/privacy policy/i)[0]).toBeInTheDocument();
     expect(
       screen.getAllByText(/what we collect and why/i)[0]
@@ -112,6 +124,7 @@ describe("The landing page Search button", () => {
     );
     await user.click(screen.getAllByText(/search/i)[0]);
 
+    expect(global.window.document.title).toBe("Log In - RecordSponge");
     expect(
       screen.getAllByText(/oregon ecourt case information/i)[0]
     ).toBeInTheDocument();

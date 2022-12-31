@@ -7,17 +7,19 @@ import { hasOeciToken } from "../../service/cookie-service";
 import { HashLink as Link } from "react-router-hash-link";
 import { useNavigate } from "react-router-dom";
 import { useAppSelector } from "../../redux/hooks";
+import useSetTitle from "../../hooks/useSetTitle";
 
 export default function RecordSearch() {
   const navigate = useNavigate();
   const record = useAppSelector((state) => state.search.record);
   const demo = useAppSelector((state) => state.search.demo);
 
+  useSetTitle("Search Records");
+
   useEffect(() => {
     if (!demo || !hasOeciToken()) {
       navigate("/oeci");
     }
-    document.title = "Search Records - RecordSponge";
   }, [demo, navigate]);
 
   return (
