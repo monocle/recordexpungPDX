@@ -1,14 +1,12 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
-import "@testing-library/jest-dom";
-import userEvent from "@testing-library/user-event";
-import App from "./index";
 import { BrowserRouter, MemoryRouter } from "react-router-dom";
 import { Provider } from "react-redux";
-import store from "../../redux/store";
+import "@testing-library/jest-dom";
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 
-// TODO test Rules, Demo, FillFroms routing. Currently, these do not have
-// links from the landing page.
+import store from "../../redux/store";
+import App from "./index";
 
 describe("On landing", () => {
   beforeEach(() => {
@@ -98,20 +96,6 @@ describe("On landing", () => {
   });
 });
 
-it("displays the landing page for unknown routes", () => {
-  const badRoute = "/foo";
-
-  render(
-    <MemoryRouter initialEntries={[badRoute]}>
-      <App />
-    </MemoryRouter>
-  );
-
-  expect(
-    screen.getByText(/Making Record Expungement Affordable/i)
-  ).toBeInTheDocument();
-});
-
 describe("The landing page Search button", () => {
   it("goes to the OECI log in page", async () => {
     const user = userEvent.setup();
@@ -129,5 +113,35 @@ describe("The landing page Search button", () => {
       screen.getAllByText(/oregon ecourt case information/i)[0]
     ).toBeInTheDocument();
     expect(screen.getAllByText(/log in to oeci/i)[0]).toBeInTheDocument();
+  });
+});
+
+// TODO test Rules, Demo routing.
+
+describe("Remaining app routes", () => {
+  // This is the current production behavior, but it may not be intended.
+  it("can go to /fill-expungement-forms", () => {
+    render(
+      <Provider store={store}>
+        <MemoryRouter initialEntries={["/fill-expungement-forms"]}>
+          <App />
+        </MemoryRouter>
+      </Provider>
+    );
+
+    expect(screen.getByText(/generate expungement forms/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/user information/i)[0]).toBeInTheDocument();
+  });
+
+  it("displays the landing page for unknown routes", () => {
+    render(
+      <MemoryRouter initialEntries={["/foo"]}>
+        <App />
+      </MemoryRouter>
+    );
+
+    expect(
+      screen.getByText(/Making Record Expungement Affordable/i)
+    ).toBeInTheDocument();
   });
 });
