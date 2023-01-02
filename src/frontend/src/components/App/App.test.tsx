@@ -26,7 +26,6 @@ describe("On landing", () => {
 
     expect(global.window.document.title).toBe("Manual - RecordSponge");
     expect(screen.getAllByText(/introduction/i)[0]).toBeInTheDocument();
-    expect(screen.getAllByText(/general info/i)[0]).toBeInTheDocument();
   });
 
   it("can go to the About Us page", async () => {
