@@ -15,7 +15,7 @@ describe("On landing", () => {
     render(<App />, { wrapper: BrowserRouter });
   });
 
-  it("displays the landing page header", () => {
+  it("displays the landing page heading", () => {
     expect(global.window.document.title).toBe("Home - RecordSponge");
     expect(
       screen.getByText(/Making Record Expungement Affordable/i)

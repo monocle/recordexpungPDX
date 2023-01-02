@@ -1,17 +1,13 @@
 import React from "react";
 
-interface Props {
+export default function LoadingSpinner({
+  inputString,
+}: {
   inputString: string;
+}) {
+  return (
+    <p className="bg-white shadow mv4 pa4 br3 fw6 tc">
+      <span className="spinner mr2"></span>Loading {inputString}...
+    </p>
+  );
 }
-
-class LoadingSpinner extends React.Component<Props> {
-  render() {
-    return (
-      <p className="bg-white shadow mv4 pa4 br3 fw6 tc">
-        <span className="spinner mr2"></span>Loading {this.props.inputString}...
-      </p>
-    );
-  }
-}
-
-export default LoadingSpinner;
