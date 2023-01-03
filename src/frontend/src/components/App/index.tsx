@@ -56,10 +56,7 @@ function App() {
 
         <Route path="/fill-expungement-forms" element={<FillForms />} />
 
-        <Route
-          path="/partner-interest"
-          element={<PartnerInterest email="" invalidEmail={true} />}
-        />
+        <Route path="/partner-interest" element={<PartnerInterest />} />
 
         <Route
           path="/accessibility-statement"
