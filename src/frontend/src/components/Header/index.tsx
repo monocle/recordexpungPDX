@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import Logo from "../Logo";
+import SVG from "../SVG";
 
 export default function Header() {
   return (
@@ -11,7 +11,7 @@ export default function Header() {
       >
         <div className="logo mb4 mb0-ns">
           <Link to="/" aria-label="Home">
-            <Logo />
+            <SVG name="logo" data-name="Layer 1" viewBox="0 0 489.53 78.73" />
           </Link>
         </div>
         <div className="mt5 mt2-ns">

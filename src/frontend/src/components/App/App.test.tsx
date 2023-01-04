@@ -4,9 +4,21 @@ import { Provider } from "react-redux";
 import "@testing-library/jest-dom";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import renderer from "react-test-renderer";
 
 import store from "../../redux/store";
 import App from "./index";
+
+it("renders correctly", () => {
+  const tree = renderer
+    .create(
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
+    )
+    .toJSON();
+  expect(tree).toMatchSnapshot();
+});
 
 describe("On landing", () => {
   beforeEach(() => {
