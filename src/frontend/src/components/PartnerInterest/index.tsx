@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React from "react";
 import InvalidInputs from "../InvalidInputs";
 import { HashLink as Link } from "react-router-hash-link";
-import useEmail from "../../hooks/useEmail";
+import useEmailInput from "../../hooks/useEmailInput";
 import useSetTitle from "../../hooks/useSetTitle";
 
 const mailchimpEnpoint =
@@ -10,32 +10,9 @@ const mailchimpEnpoint =
 export default function PartnerInterest({
   subscribeEndpoint = mailchimpEnpoint,
 }) {
-  const emailErrorMessage = "A valid email address is required";
-  const [email, isValidEmail, setEmail] = useEmail();
-  const [formErrors, setFormErrors] = useState<string[]>([]);
-
-  const handlEmailChange = (e: React.BaseSyntheticEvent) => {
-    setEmail(e.target.value);
-  };
-
-  const handleEmailInputFocus = () => {
-    setFormErrors([]);
-  };
-
-  const handleEmailInputBlur = () => {
-    if (!isValidEmail) {
-      setFormErrors([emailErrorMessage]);
-    }
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    if (!isValidEmail) {
-      e.preventDefault();
-      setFormErrors([emailErrorMessage]);
-    } else {
-      setFormErrors([]);
-    }
-  };
+  const { emailErrors, emailInputAttrs, handleFormSubmit } = useEmailInput({
+    invalidMessage: "A valid email address is required",
+  });
 
   useSetTitle("Partner with us");
 
@@ -121,14 +98,10 @@ export default function PartnerInterest({
                       Email Address (required)
                     </label>
                     <input
-                      type="email"
-                      value={email}
+                      {...emailInputAttrs}
                       name="EMAIL"
                       className="w-100 b--black-20 br2 pa3 required email"
                       id="mce-EMAIL"
-                      onChange={handlEmailChange}
-                      onFocus={handleEmailInputFocus}
-                      onBlur={handleEmailInputBlur}
                     />
                   </div>
                   <div className="mb3 mc-field-group">
@@ -182,12 +155,12 @@ export default function PartnerInterest({
                       name="subscribe"
                       id="mc-embedded-subscribe"
                       className="w-100 pointer bg-blue white bg-animate hover-bg-dark-blue bn fw6 br2 pv3 ph4"
-                      onClick={handleSubmit}
+                      onClick={handleFormSubmit}
                     />
                   </div>
                   <InvalidInputs
-                    conditions={[formErrors.length > 0]}
-                    contents={formErrors}
+                    conditions={[emailErrors.length > 0]}
+                    contents={emailErrors}
                   />
                 </div>
               </div>

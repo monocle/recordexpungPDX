@@ -5,17 +5,7 @@ import userEvent from "@testing-library/user-event";
 
 import PartnerInterest from "./index";
 
-function assertPresentInvalidEmailMessage(screen: Screen<typeof queries>) {
-  expect(
-    screen.queryByText(/valid email address is required/i)
-  ).toBeInTheDocument();
-}
-
-function assertNotPresentInvalidEmailMessage(screen: Screen<typeof queries>) {
-  expect(
-    screen.queryByText(/valid email address is required/i)
-  ).not.toBeInTheDocument();
-}
+function assertPresentInvalidEmailMessage(screen: Screen<typeof queries>) {}
 
 beforeEach(() => {
   render(<PartnerInterest subscribeEndpoint="/" />, {
@@ -29,7 +19,9 @@ describe("PartnerInterest", () => {
     expect(screen.getByLabelText(/email address/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/name/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/organization/i)).toBeInTheDocument();
-    assertNotPresentInvalidEmailMessage(screen);
+    expect(
+      screen.queryByText(/valid email address is required/i)
+    ).not.toBeInTheDocument();
   });
 });
 
@@ -38,7 +30,9 @@ describe("Email validation", () => {
     const user = userEvent.setup();
 
     await user.click(screen.getByLabelText(/email/i));
-    assertNotPresentInvalidEmailMessage(screen);
+    expect(
+      screen.queryByText(/valid email address is required/i)
+    ).not.toBeInTheDocument();
   });
 
   it("does not display an error message if leaving the email input in a valid state", async () => {
@@ -49,7 +43,9 @@ describe("Email validation", () => {
     expect(input).toHaveValue("foo@bar.com");
 
     await user.click(screen.getByLabelText(/name/i));
-    assertNotPresentInvalidEmailMessage(screen);
+    expect(
+      screen.queryByText(/valid email address is required/i)
+    ).not.toBeInTheDocument();
   });
 
   // Unable to get this to work:
@@ -69,7 +65,9 @@ describe("Email validation", () => {
     const user = userEvent.setup();
     await user.click(screen.getByRole("button", { name: /subscribe/i }));
 
-    assertPresentInvalidEmailMessage(screen);
+    expect(
+      screen.queryByText(/valid email address is required/i)
+    ).toBeInTheDocument();
   });
 
   it("displays an error message if leaving the email input in an invalid state", async () => {
@@ -80,7 +78,9 @@ describe("Email validation", () => {
     expect(input).toHaveValue("foo@bar.");
 
     await user.click(screen.getByLabelText(/name/i));
-    assertPresentInvalidEmailMessage(screen);
+    expect(
+      screen.queryByText(/valid email address is required/i)
+    ).toBeInTheDocument();
   });
 
   it("removes an error message if the email input is refocused on", async () => {
@@ -91,9 +91,13 @@ describe("Email validation", () => {
     expect(input).toHaveValue("foo@bar.");
 
     await user.click(screen.getByLabelText(/name/i));
-    assertPresentInvalidEmailMessage(screen);
+    expect(
+      screen.queryByText(/valid email address is required/i)
+    ).toBeInTheDocument();
 
     await user.click(input);
-    assertNotPresentInvalidEmailMessage(screen);
+    expect(
+      screen.queryByText(/valid email address is required/i)
+    ).not.toBeInTheDocument();
   });
 });
