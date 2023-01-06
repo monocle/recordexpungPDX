@@ -1,11 +1,9 @@
 import { BrowserRouter } from "react-router-dom";
 import "@testing-library/jest-dom";
-import { render, screen, Screen, queries } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import PartnerInterest from "./index";
-
-function assertPresentInvalidEmailMessage(screen: Screen<typeof queries>) {}
 
 beforeEach(() => {
   render(<PartnerInterest subscribeEndpoint="/" />, {
