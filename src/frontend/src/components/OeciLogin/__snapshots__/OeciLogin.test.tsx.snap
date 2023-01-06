@@ -75,14 +75,17 @@ exports[`OeciLogin renders correctly 1`] = `
                   User ID
                 </label>
                 <input
-                  aria-invalid={false}
+                  aria-invalid={true}
                   autoComplete="username"
                   className="w-100 mb4 pa3 br2 b--black-20"
                   id="userId"
                   name="oecilogin"
+                  onBlur={[Function]}
                   onChange={[Function]}
+                  onFocus={[Function]}
                   required={true}
                   type="text"
+                  value=""
                 />
               </div>
               <label
@@ -92,14 +95,17 @@ exports[`OeciLogin renders correctly 1`] = `
                 Password
               </label>
               <input
-                aria-invalid={false}
+                aria-invalid={true}
                 autoComplete="current-password"
                 className="w-100 mb4 pa3 br2 b--black-20"
                 id="password"
                 name="oecilogin"
+                onBlur={[Function]}
                 onChange={[Function]}
+                onFocus={[Function]}
                 required={true}
                 type="password"
+                value=""
               />
               <button
                 className="bg-blue white bg-animate hover-bg-dark-blue fw6 db w-100 br2 pv3 ph4 tc"

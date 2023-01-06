@@ -24,21 +24,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Landing />} />
 
-        <Route
-          path="/oeci"
-          element={
-            <OeciLogin
-              userId=""
-              password=""
-              missingUserId={false}
-              missingPassword={false}
-              expectedFailure={false}
-              expectedFailureMessage=""
-              invalidResponse={false}
-              missingInputs={false}
-            />
-          }
-        />
+        <Route path="/oeci" element={<OeciLogin />} />
 
         <Route path="/record-search" element={<RecordSearch />} />
 

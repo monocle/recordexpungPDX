@@ -1,8 +1,8 @@
 import React from "react";
 import InvalidInputs from "../InvalidInputs";
 import { HashLink as Link } from "react-router-hash-link";
-import useEmailInput from "../../hooks/useEmailInput";
 import useSetTitle from "../../hooks/useSetTitle";
+import useFormInput from "../../hooks/useFormInput";
 
 const mailchimpEnpoint =
   "https://recordsponge.us10.list-manage.com/subscribe/post?u=8aa8348c6b5b43cde29949c59&amp;id=17b2f23a63";
@@ -10,7 +10,7 @@ const mailchimpEnpoint =
 export default function PartnerInterest({
   subscribeEndpoint = mailchimpEnpoint,
 }) {
-  const { emailErrors, emailInputAttrs, handleFormSubmit } = useEmailInput({
+  const { emailErrors, emailProps, handleFormSubmit } = useFormInput("email", {
     invalidMessage: "A valid email address is required",
   });
 
@@ -98,10 +98,11 @@ export default function PartnerInterest({
                       Email Address (required)
                     </label>
                     <input
-                      {...emailInputAttrs}
+                      {...emailProps}
                       name="EMAIL"
                       className="w-100 b--black-20 br2 pa3 required email"
                       id="mce-EMAIL"
+                      required
                     />
                   </div>
                   <div className="mb3 mc-field-group">
