@@ -7,7 +7,19 @@ import renderer from "react-test-renderer";
 import OeciLogin from ".";
 import oeciLogIn from "../../service/oeci";
 
+const mockedNavigate = jest.fn();
+
+jest.mock("react-router-dom", () => ({
+  ...jest.requireActual("react-router-dom"),
+  useNavigate: () => mockedNavigate,
+}));
+
 jest.mock("../../service/oeci", () => jest.fn());
+
+jest.mock("../../service/cookie-service", () => ({
+  ...jest.requireActual("../../service/cookie-service"),
+  hasOeciToken: () => true,
+}));
 
 it("OeciLogin renders correctly", () => {
   const tree = renderer
@@ -58,7 +70,7 @@ describe("Form validation", () => {
 });
 
 describe("Login error handling", () => {
-  it("successful login has no errors", async () => {
+  it("successful login has no errors and should redirect to /record-search", async () => {
     const user = userEvent.setup();
     const userIdInput = screen.getByLabelText(/user id/i);
     const pwInput = screen.getByLabelText(/password/i);
@@ -75,6 +87,8 @@ describe("Login error handling", () => {
     expect(
       screen.queryByText(/all fields are required/i)
     ).not.toBeInTheDocument();
+
+    expect(mockedNavigate).toHaveBeenCalledWith("/record-search");
   });
 
   [401, 404].forEach((status) => {

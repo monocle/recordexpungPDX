@@ -1,9 +1,10 @@
 import React, { useState } from "react";
+import { AxiosError } from "axios";
+import { Link, useNavigate } from "react-router-dom";
 import InvalidInputs from "../InvalidInputs";
 import oeciLogIn from "../../service/oeci";
-import { Link } from "react-router-dom";
+import { hasOeciToken } from "../../service/cookie-service";
 import SVG from "../SVG";
-import { AxiosError } from "axios";
 import useSetTitle from "../../hooks/useSetTitle";
 import useFormInput from "../../hooks/useFormInput";
 
@@ -24,6 +25,7 @@ function GenericErrorMessage() {
 export default function OeciLogin() {
   useSetTitle("Log In");
 
+  const navigate = useNavigate();
   const { userId, isUserIdValid, userIdProps } = useFormInput("userId");
   const { password, isPasswordValid, passwordProps } = useFormInput("password");
   const [errorMessages, setErrorMessages] = useState<string[] | JSX.Element[]>(
@@ -38,17 +40,23 @@ export default function OeciLogin() {
     e.preventDefault();
 
     if (isUserIdValid && isPasswordValid) {
-      oeciLogIn(userId, password).catch((error: any) => {
-        const status = (error as AxiosError).response?.status ?? 0;
-        const errorMessage =
-          status === 401 || status === 404 ? (
-            error.response.data.message
-          ) : (
-            <GenericErrorMessage />
-          );
+      oeciLogIn(userId, password)
+        .then((response: any) => {
+          if (hasOeciToken()) {
+            navigate("/record-search");
+          }
+        })
+        .catch((error: any) => {
+          const status = (error as AxiosError).response?.status ?? 0;
+          const errorMessage =
+            status === 401 || status === 404 ? (
+              error.response.data.message
+            ) : (
+              <GenericErrorMessage />
+            );
 
-        setErrorMessages([errorMessage]);
-      });
+          setErrorMessages([errorMessage]);
+        });
     }
   };
 
@@ -89,7 +97,6 @@ export default function OeciLogin() {
                     </label>
                     <input
                       {...userIdProps}
-                      name="oecilogin"
                       autoComplete="username"
                       className="w-100 mb4 pa3 br2 b--black-20"
                       required
@@ -100,7 +107,6 @@ export default function OeciLogin() {
                   </label>
                   <input
                     {...passwordProps}
-                    name="oecilogin"
                     autoComplete="current-password"
                     className="w-100 mb4 pa3 br2 b--black-20"
                     required
