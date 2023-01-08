@@ -21,9 +21,6 @@ import {
   DONE_EDITING,
   DOWNLOAD_EXPUNGEMENT_PACKET,
   LOADING_EXPUNGEMENT_PACKET_COMPLETE,
-  START_DEMO,
-  STOP_DEMO,
-  SearchRecordActionType,
 } from "./types";
 import { AliasData } from "../../components/RecordSearch/SearchPanel/types";
 import { RecordData } from "../../components/RecordSearch/Record/types";
@@ -99,18 +96,6 @@ function buildAndSendDownloadPdfRequest(dispatch: any): any {
       });
       alert(error.message);
     });
-}
-
-export function startDemo() {
-  return {
-    type: START_DEMO,
-  } as SearchRecordActionType;
-}
-
-export function stopDemo() {
-  return {
-    type: STOP_DEMO,
-  } as SearchRecordActionType;
 }
 
 export function downloadPdf() {

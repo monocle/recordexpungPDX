@@ -12,8 +12,6 @@ import {
   UNDO_EDIT_CHARGE,
   START_EDITING,
   DONE_EDITING,
-  START_DEMO,
-  STOP_DEMO,
   DOWNLOAD_EXPUNGEMENT_PACKET,
   LOADING_EXPUNGEMENT_PACKET_COMPLETE,
   SearchRecordState,
@@ -418,16 +416,6 @@ export function searchReducer(
       return {
         ...state,
         loadingExpungementPacket: false,
-      };
-    case START_DEMO:
-      return {
-        ...state,
-        demo: true,
-      };
-    case STOP_DEMO:
-      return {
-        ...state,
-        demo: false,
       };
     default:
       return state;

@@ -4,7 +4,7 @@ import { Navigate, Routes, Route } from "react-router-dom";
 import Footer from "../Footer";
 import Header from "../Header";
 import RecordSearch from "../RecordSearch";
-import Demo from "../RecordSearch/Demo";
+import Demo from "../Demo";
 import OeciLogin from "../OeciLogin";
 import Landing from "../Landing";
 import Manual from "../Manual";

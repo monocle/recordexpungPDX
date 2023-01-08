@@ -1,8 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { stopDemo } from "../../../redux/search/actions";
 import { useNavigate } from "react-router-dom";
-import { useAppDispatch } from "../../../redux/hooks";
 
 const examplesData = [
   {
@@ -91,12 +89,6 @@ function FormattedExample({
 
 export default function DemoInfo() {
   const navigate = useNavigate();
-  const dispatch = useAppDispatch();
-
-  const toOeci = () => {
-    dispatch(stopDemo());
-    navigate("/oeci");
-  };
 
   return (
     <article className="lh-copy">
@@ -130,7 +122,10 @@ export default function DemoInfo() {
 
         <p className="mb4">
           Or,{" "}
-          <button className="link bb mid-gray hover-blue" onClick={toOeci}>
+          <button
+            className="link bb mid-gray hover-blue"
+            onClick={() => navigate("/oeci")}
+          >
             log in to OECI
           </button>
           .

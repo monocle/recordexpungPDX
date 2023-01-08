@@ -108,7 +108,7 @@ describe("On landing", () => {
 });
 
 describe("The landing page Search button", () => {
-  it("goes to the OECI log in page", async () => {
+  it("goes to the record search page, but displays the OECI log", async () => {
     const user = userEvent.setup();
 
     render(
@@ -127,9 +127,24 @@ describe("The landing page Search button", () => {
   });
 });
 
-// TODO test Rules, Demo routing.
+// TODO test Rules
 
 describe("Remaining app routes", () => {
+  it("can go to /demo-record-search", () => {
+    render(
+      <Provider store={store}>
+        <MemoryRouter initialEntries={["/demo-record-search"]}>
+          <App />
+        </MemoryRouter>
+      </Provider>
+    );
+
+    expect(global.window.document.title).toBe("Demo - RecordSponge");
+    expect(screen.getByText(/app demo/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/john common/i)[0]).toBeInTheDocument();
+    expect(screen.getByText(/expunge date/i)).toBeInTheDocument();
+  });
+
   // This is the current production behavior, but it may not be intended.
   it("can go to /fill-expungement-forms", () => {
     render(
