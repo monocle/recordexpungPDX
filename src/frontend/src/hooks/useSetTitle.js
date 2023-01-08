@@ -1,7 +1,11 @@
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 
 export default function useSetTitle(pageName) {
+  const [title, setTitle] = useState(pageName);
+
   useEffect(() => {
-    document.title = pageName + " - RecordSponge";
-  }, [pageName]);
+    document.title = title + " - RecordSponge";
+  }, [title]);
+
+  return [title, setTitle];
 }

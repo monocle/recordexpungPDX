@@ -1,7 +1,9 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`renders correctly 1`] = `
-Array [
+<main
+  className="mw8 center f6 f5-l ph2"
+>
   <article
     className="lh-copy"
   >
@@ -295,12 +297,12 @@ Array [
         </div>
       </div>
     </div>
-  </article>,
+  </article>
   <h1
     className="visually-hidden"
   >
     Record Search
-  </h1>,
+  </h1>
   <section
     className="cf mt4 mb3 pa4 bg-white shadow br3"
   >
@@ -491,8 +493,8 @@ Array [
         role="alert"
       />
     </form>
-  </section>,
-  <section />,
+  </section>
+  <section />
   <section>
     <div
       className="tr"
@@ -520,7 +522,7 @@ Array [
         </span>
       </a>
     </div>
-  </section>,
+  </section>
   <div
     className="bg-white shadow mb6 pa4 br3"
   >
@@ -572,6 +574,6 @@ Array [
         Learn more in the Manual
       </a>
     </p>
-  </div>,
-]
+  </div>
+</main>
 `;

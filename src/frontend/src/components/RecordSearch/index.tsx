@@ -11,16 +11,14 @@ import OeciLogin from "../OeciLogin";
 export default function RecordSearch() {
   const record = useAppSelector((state) => state.search.record);
   const [shouldDisplay, setShouldDisplay] = useState(false);
-  const [title, setTitle] = useState("Log In");
-
-  useSetTitle(title);
+  const [, setTitle] = useSetTitle("Log In");
 
   useEffect(() => {
     if (hasOeciToken()) {
       setShouldDisplay(true);
       setTitle("Record Search");
     }
-  }, []);
+  }, [setTitle]);
 
   return (
     <>
