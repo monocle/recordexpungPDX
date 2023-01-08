@@ -7,7 +7,7 @@ interface Props {
   type_name: string;
 }
 
-export default class RecordType extends React.Component<Props> {
+export default class TypeEligibility extends React.Component<Props> {
   render() {
     const { status, reason } = this.props.type_eligibility;
 

@@ -6,6 +6,9 @@ import Status from "../RecordSearch/Status";
 import Record from "../RecordSearch/Record";
 import Assumptions from "../RecordSearch/Assumptions";
 
+// Can use this for dev
+// import record from "./demoResponse";
+
 export default function Demo() {
   const record = useAppSelector((state) => state.search.record);
 
