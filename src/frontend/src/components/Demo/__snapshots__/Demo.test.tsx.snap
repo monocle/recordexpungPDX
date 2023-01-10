@@ -497,6 +497,243 @@ exports[`renders correctly 1`] = `
   <section />
   <section>
     <div
+      className="bg-white shadow br3 mb3 ph3 pb3"
+    >
+      <div
+        className="flex flex-wrap justify-end mb1"
+      >
+        <h2
+          className="f5 fw7 mv3 mr-auto"
+        >
+          Search Summary
+        </h2>
+        <button
+          className="ma2 nowrap mid-gray link hover-blue fw6 br3 pv1 ph2"
+          onClick={[Function]}
+        >
+          <i
+            aria-hidden="true"
+            className="fas fa-bolt pr2"
+          />
+          Generate Paperwork
+        </button>
+        <button
+          className="ma2 nowrap mid-gray link hover-blue fw6 br3 pv1 ph2"
+          onClick={[Function]}
+        >
+          <i
+            aria-hidden="true"
+            className="fas fa-download pr2"
+          />
+          Summary PDF
+        </button>
+      </div>
+      <div
+        className="flex-ns flex-wrap"
+      >
+        <div
+          className="w-100 w-two-thirds-l"
+        >
+          <h3
+            className="bt b--light-gray pt2 mb3"
+          >
+            <span
+              className="fw7"
+            >
+              Cases
+            </span>
+             (
+            5
+            )
+          </h3>
+          <h3
+            className="bt b--light-gray pt2 mb3"
+          >
+            <span
+              className="fw7"
+            >
+              Charges
+            </span>
+             (
+            5
+            )
+            <p
+              className="f6 fw5 pt1"
+            >
+              Excludes traffic violations
+            </p>
+          </h3>
+          <div
+            className="mb3"
+          >
+            <div
+              className="dark-blue bb b--light-gray lh-copy pb1"
+            >
+              <span
+                className="fw7 mb2"
+              >
+                 
+                Eligible Nov 28, 2025
+                 
+              </span>
+              <span>
+                 
+                (1)
+                 
+              </span>
+              <p
+                className="f6 fw5"
+              />
+            </div>
+            <ul
+              className="list"
+            >
+              <li
+                className="f6 bb b--light-gray pv2"
+              >
+                <a
+                  className="link hover-blue"
+                  href="#100000-1"
+                >
+                  Aggravated Theft in the First Degree (CONVICTED) Charged Jul 16, 2016
+                </a>
+              </li>
+            </ul>
+          </div>
+          <div
+            className="mb3"
+          >
+            <div
+              className="green bb b--light-gray lh-copy pb1"
+            >
+              <span
+                className="fw7 mb2"
+              >
+                 
+                Eligible Now
+                 
+              </span>
+              <span>
+                 
+                (3)
+                 
+              </span>
+              <p
+                className="f6 fw5"
+              />
+            </div>
+            <ul
+              className="list"
+            >
+              <li
+                className="f6 bb b--light-gray pv2"
+              >
+                <a
+                  className="link hover-blue"
+                  href="#200000-1"
+                >
+                  Obstruction of search warrant (DISMISSED) Charged Jul 16, 2019
+                </a>
+              </li>
+              <li
+                className="f6 bb b--light-gray pv2"
+              >
+                <a
+                  className="link hover-blue"
+                  href="#110000-1"
+                >
+                  Theft in the Second Degree (CONVICTED) Charged Apr 2, 2015
+                </a>
+              </li>
+              <li
+                className="f6 bb b--light-gray pv2"
+              >
+                <a
+                  className="link hover-blue"
+                  href="#120000-1"
+                >
+                  Poss under oz Marijuana (CONVICTED) Charged Apr 2, 2014
+                </a>
+              </li>
+            </ul>
+          </div>
+          <div
+            className="mb3"
+          >
+            <div
+              className="purple bb b--light-gray lh-copy pb1"
+            >
+              <span
+                className="fw7 mb2"
+              >
+                 
+                Needs More Analysis
+                 
+              </span>
+              <span>
+                 
+                (1)
+                 
+              </span>
+              <p
+                className="f6 fw5"
+              >
+                These charges need clarification below before an accurate analysis can be determined
+              </p>
+            </div>
+            <ul
+              className="list"
+            >
+              <li
+                className="f6 bb b--light-gray pv2"
+              >
+                <a
+                  className="link hover-blue"
+                  href="#210000-1"
+                >
+                  Poss Controlled Sub (CONVICTED) Charged Sep 23, 2018
+                </a>
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div
+          className="w-100 w-33-l ph3-l mb3"
+        >
+          <div
+            className="mb4"
+          >
+            <h3
+              className="fw7 bt b--light-gray pt2 mb3"
+            >
+              Balance due by county
+               
+              <a
+                className=" gray link hover-blue underline"
+                href="/manual#paybalances"
+                onClick={[Function]}
+              >
+                <i
+                  aria-hidden="true"
+                  className="fas fa-question-circle link hover-dark-blue"
+                />
+                <span
+                  className="visually-hidden"
+                >
+                  Learn more about balances
+                </span>
+              </a>
+            </h3>
+            <ul
+              className="mw5 list"
+            >
+              None
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div
       className="tr"
     >
       <button
@@ -521,6 +758,1434 @@ exports[`renders correctly 1`] = `
           Editing Help
         </span>
       </a>
+    </div>
+    <div
+      className="mb3"
+    >
+      <ul
+        className="list"
+      >
+        <li>
+          <div
+            className="f6 f5-l bg-gray-blue-2 shadow br3 pa1 mb4"
+            id="200000"
+          >
+            <div
+              className="cf relative pv2 pr5 pr6-ns"
+            >
+              <div
+                className="cf mb2"
+              >
+                <div
+                  className="ch1 fl ph3 pv1"
+                >
+                  <div
+                    className="fw7"
+                  >
+                    Case
+                  </div>
+                  <a
+                    className="link bb hover-blue"
+                    href="http://localhost:5000/api/case_detail_page/"
+                    rel="noreferrer"
+                    target="_blank"
+                  >
+                    200000
+                  </a>
+                </div>
+                <div
+                  className="ch2 fl ph3 pv1"
+                >
+                  <div
+                    className="fw7"
+                  >
+                    Status
+                  </div>
+                  Closed
+                </div>
+                <div
+                  className="ch3 fl ph3 pv1"
+                >
+                  <div
+                    className="fw7"
+                  >
+                    DA Number
+                  </div>
+                  <span
+                    className="break-all"
+                  >
+                    01234567
+                  </span>
+                </div>
+              </div>
+              <div
+                className="cl"
+              >
+                <div
+                  className="ch4 fl ph3 pv1"
+                >
+                  <div
+                    className="fw7"
+                  >
+                    County
+                  </div>
+                  Benton
+                </div>
+                <div
+                  className="ch5 fl ph3 pv1"
+                >
+                  <div
+                    className="fw7"
+                  >
+                    Balance
+                  </div>
+                  $0.00
+                </div>
+                <div
+                  className="ch6 fl ph3 pv1"
+                >
+                  <div
+                    className="fw7"
+                  >
+                    DOB
+                  </div>
+                  <span>
+                    1985
+                  </span>
+                </div>
+                <div
+                  className="ch7 fl ph3 pv1"
+                >
+                  <div
+                    className="fw7"
+                  >
+                    Name
+                  </div>
+                  <span>
+                    COMMON NAME
+                  </span>
+                </div>
+              </div>
+            </div>
+            <ul
+              className="list"
+            >
+              <li>
+                <div
+                  className="relative br3 bg-white ma2"
+                  id="200000-1"
+                >
+                  <div
+                    className="relative connect connect-result pr6"
+                  >
+                    <h2
+                      className="green bg-washed-green fw6 pv2 ph3 ma2 mb3 dib br3 relative outline-2-white z-1"
+                    >
+                      Eligible Now
+                    </h2>
+                  </div>
+                  <div
+                    className="flex-l ph3 pb2"
+                  >
+                    <div
+                      className="w-100 w-40-l relative pr6 pr4-l"
+                    >
+                      <div
+                        className="relative mb3 connect connect-time"
+                      >
+                        <i
+                          aria-hidden="true"
+                          className="absolute fas fa-check-circle green bg-white outline-2-white z-1"
+                        />
+                        <div
+                          className="ml3 pl1"
+                        >
+                          <span
+                            className="fw7"
+                          >
+                            Time:
+                          </span>
+                           Eligible Now
+                        </div>
+                      </div>
+                      <div
+                        className="relative mb3 connect connect-type"
+                      >
+                        <i
+                          aria-hidden="true"
+                          className="absolute fas fa-circle gray outline-2-white z-1"
+                        />
+                        <div
+                          className="ml3 pl1"
+                        >
+                          <div
+                            className="false"
+                          >
+                            <span
+                              className="fw7"
+                            >
+                              Type: 
+                            </span>
+                            Dismissed Criminal Charge – Dismissals are generally eligible under 137.225(1)(d)
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div
+                      className="w-100 w-60-l pr3 pr6-l"
+                    >
+                      <ul
+                        className="list"
+                      >
+                        <li
+                          className="flex mb2"
+                        >
+                          <span
+                            className="w6rem shrink-none fw7"
+                          >
+                            Charge
+                          </span>
+                          162247-Obstruction of search warrant
+                        </li>
+                        <li
+                          className="flex mb2"
+                        >
+                          <span
+                            className="w6rem shrink-none fw7"
+                          >
+                            Severity
+                          </span>
+                           
+                          Misdemeanor Class A
+                        </li>
+                        <li
+                          className="flex mb2"
+                        >
+                          <span
+                            className="w6rem shrink-none fw7"
+                          >
+                            Disposition
+                          </span>
+                           
+                          Dismissed - Jul 16, 2019
+                        </li>
+                        <li
+                          className="flex mb2"
+                        >
+                          <span
+                            className="w6rem shrink-none fw7"
+                          >
+                            Charged
+                          </span>
+                           
+                          Jul 16, 2019
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                  <div
+                    className="bt b--light-gray pt2 mh3 pb2"
+                  >
+                    <div
+                      className=""
+                    >
+                      <button
+                        aria-controls="panel--disclosure"
+                        aria-expanded={false}
+                        data-reach-disclosure-button=""
+                        data-state="collapsed"
+                        onClick={[Function]}
+                      >
+                        <span
+                          className="flex items-center fw5 mid-gray link hover-blue pb1"
+                        >
+                          More Info
+                          <span
+                            aria-hidden="true"
+                            className="fas fa-angle-down pt1 pl1"
+                          />
+                        </span>
+                      </button>
+                      <div
+                        className="pt2"
+                        data-reach-disclosure-panel=""
+                        data-state="collapsed"
+                        hidden={true}
+                        id="panel--disclosure"
+                      >
+                        <div
+                          className="mb2"
+                        >
+                          Dismissed criminal charges are generally eligible under 137.225(1)(d).  All criminal charges and Contempt of Court charges that are dismissed fall under this charge type.
+                        </div>
+                        <div
+                          className="mb2"
+                        >
+                                 Charges without a named charge level in OECI are not considered criminal charges, and are thus not eligible under this or any subsection.
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </li>
+        <li>
+          <div
+            className="f6 f5-l bg-gray-blue-2 shadow br3 pa1 mb4"
+            id="210000"
+          >
+            <div
+              className="cf relative pv2 pr5 pr6-ns"
+            >
+              <div
+                className="cf mb2"
+              >
+                <div
+                  className="ch1 fl ph3 pv1"
+                >
+                  <div
+                    className="fw7"
+                  >
+                    Case
+                  </div>
+                  <a
+                    className="link bb hover-blue"
+                    href="http://localhost:5000/api/case_detail_page/"
+                    rel="noreferrer"
+                    target="_blank"
+                  >
+                    210000
+                  </a>
+                </div>
+                <div
+                  className="ch2 fl ph3 pv1"
+                >
+                  <div
+                    className="fw7"
+                  >
+                    Status
+                  </div>
+                  Closed
+                </div>
+                <div
+                  className="ch3 fl ph3 pv1"
+                >
+                  <div
+                    className="fw7"
+                  >
+                    DA Number
+                  </div>
+                  <span
+                    className="break-all"
+                  >
+                    01234567
+                  </span>
+                </div>
+              </div>
+              <div
+                className="cl"
+              >
+                <div
+                  className="ch4 fl ph3 pv1"
+                >
+                  <div
+                    className="fw7"
+                  >
+                    County
+                  </div>
+                  Baker
+                </div>
+                <div
+                  className="ch5 fl ph3 pv1"
+                >
+                  <div
+                    className="fw7"
+                  >
+                    Balance
+                  </div>
+                  $0.00
+                </div>
+                <div
+                  className="ch6 fl ph3 pv1"
+                >
+                  <div
+                    className="fw7"
+                  >
+                    DOB
+                  </div>
+                  <span>
+                    1985
+                  </span>
+                </div>
+                <div
+                  className="ch7 fl ph3 pv1"
+                >
+                  <div
+                    className="fw7"
+                  >
+                    Name
+                  </div>
+                  <span>
+                    COMMON B. NAME
+                  </span>
+                </div>
+              </div>
+            </div>
+            <ul
+              className="list"
+            >
+              <li>
+                <div
+                  className="relative br3 bg-white ma2"
+                  id="210000-1"
+                >
+                  <div
+                    className="relative connect connect-result pr6"
+                  >
+                    <h2
+                      className="purple bg-washed-purple fw6 pv2 ph3 ma2 mb3 dib br3 relative outline-2-white z-1"
+                    >
+                      Needs More Analysis
+                    </h2>
+                  </div>
+                  <div
+                    className="flex-l ph3 pb2"
+                  >
+                    <div
+                      className="w-100 w-40-l relative pr6 pr4-l"
+                    >
+                      <div
+                        className="relative mb3 connect connect-time"
+                      >
+                        <i
+                          aria-hidden="true"
+                          className="absolute fas fa-clock dark-blue bg-white outline-2-white z-1"
+                        />
+                        <div
+                          className="ml3 pl1"
+                        >
+                          <div
+                            className="false"
+                          >
+                            <span
+                              className="fw7"
+                            >
+                              Time: 
+                            </span>
+                            Five years from date of conviction (137.225(1)(b)) 
+                          </div>
+                          <div
+                            className="bt b--light-gray pt2 mt2"
+                          >
+                            <span
+                              className="fw7"
+                            >
+                              OR 
+                            </span>
+                             Seven years from date of conviction (137.225(1)(b)) 
+                          </div>
+                          <div
+                            className="bt b--light-gray pt2 mt2"
+                          >
+                            <span
+                              className="fw7"
+                            >
+                              OR 
+                            </span>
+                             Never. Type ineligible charges are always time ineligible.
+                          </div>
+                        </div>
+                      </div>
+                      <div
+                        className="relative mb3 connect connect-type"
+                      >
+                        <i
+                          aria-hidden="true"
+                          className="absolute fas fa-question-circle purple bg-white outline-2-white z-1"
+                        />
+                        <div
+                          className="ml3 pl1"
+                        >
+                          <div
+                            className="false"
+                          >
+                            <span
+                              className="fw7"
+                            >
+                              Type: 
+                            </span>
+                            Marijuana Manufacture Delivery – Eligible under 137.226 
+                          </div>
+                          <div
+                            className="bt b--light-gray pt2 mt2"
+                          >
+                            <span
+                              className="fw7"
+                            >
+                              OR 
+                            </span>
+                             Felony Class A – Ineligible by omission from statute 
+                          </div>
+                          <div
+                            className="bt b--light-gray pt2 mt2"
+                          >
+                            <span
+                              className="fw7"
+                            >
+                              OR 
+                            </span>
+                             Felony Class B – Convictions that fulfill the conditions of 137.225(1)(b) are eligible 
+                          </div>
+                          <div
+                            className="bt b--light-gray pt2 mt2"
+                          >
+                            <span
+                              className="fw7"
+                            >
+                              OR 
+                            </span>
+                             Felony Class C – Eligible under 137.225(1)(b)
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div
+                      className="w-100 w-60-l pr3 pr6-l"
+                    >
+                      <ul
+                        className="list"
+                      >
+                        <li
+                          className="flex mb2"
+                        >
+                          <span
+                            className="w6rem shrink-none fw7"
+                          >
+                            Charge
+                          </span>
+                          4759924A-Poss Controlled Sub
+                        </li>
+                        <li
+                          className="flex mb2"
+                        >
+                          <span
+                            className="w6rem shrink-none fw7"
+                          >
+                            Severity
+                          </span>
+                           
+                          Felony Unclassified
+                        </li>
+                        <li
+                          className="flex mb2"
+                        >
+                          <span
+                            className="w6rem shrink-none fw7"
+                          >
+                            Disposition
+                          </span>
+                           
+                          Convicted - Nov 28, 2018
+                        </li>
+                        <li
+                          className="flex mb2"
+                        >
+                          <span
+                            className="w6rem shrink-none fw7"
+                          >
+                            Charged
+                          </span>
+                           
+                          Sep 23, 2018
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                  <div
+                    className="bt b--light-gray pt2 mh3 pb2"
+                  >
+                    <div
+                      className=""
+                    >
+                      <button
+                        aria-controls="panel--disclosure"
+                        aria-expanded={false}
+                        data-reach-disclosure-button=""
+                        data-state="collapsed"
+                        onClick={[Function]}
+                      >
+                        <span
+                          className="flex items-center fw5 mid-gray link hover-blue pb1"
+                        >
+                          More Info
+                          <span
+                            aria-hidden="true"
+                            className="fas fa-angle-down pt1 pl1"
+                          />
+                        </span>
+                      </button>
+                      <div
+                        className="pt2"
+                        data-reach-disclosure-panel=""
+                        data-state="collapsed"
+                        hidden={true}
+                        id="panel--disclosure"
+                      >
+                        <div
+                          className="mb2"
+                        >
+                          ORS 137.226 makes eligible additional marijuana-related charges - in particular, those crimes which are now considered minor felonies or below.
+                        </div>
+                        <div
+                          className="mb2"
+                        >
+                              One way to identify a marijuana crime is if it has the statute section 475860.
+                        </div>
+                        <div
+                          className="mb2"
+                        >
+                              Also if "marijuana", "marij", or "mj" are in the charge name, we conclude it's a marijuana eligible charge (after filtering out MarijuanaIneligible charges by statute).
+                        </div>
+                        <div
+                          className="mb2"
+                        >
+                              
+                        </div>
+                        <div
+                          className="mb2"
+                        >
+                              We broadly reclassify marijuana eligible charges that were originally Felony Class A, Felony Class B, and Felony Unclassified charges as Felony Class C.
+                        </div>
+                        <div
+                          className="mb2"
+                        >
+                              We broadly reclassify all other marijuana eligible charges as Misdemeanor Class A.
+                        </div>
+                        <div
+                          className="mb2"
+                        >
+                              
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </li>
+        <li>
+          <div
+            className="f6 f5-l bg-gray-blue-2 shadow br3 pa1 mb4"
+            id="100000"
+          >
+            <div
+              className="cf relative pv2 pr5 pr6-ns"
+            >
+              <div
+                className="cf mb2"
+              >
+                <div
+                  className="ch1 fl ph3 pv1"
+                >
+                  <div
+                    className="fw7"
+                  >
+                    Case
+                  </div>
+                  <a
+                    className="link bb hover-blue"
+                    href="http://localhost:5000/api/case_detail_page/"
+                    rel="noreferrer"
+                    target="_blank"
+                  >
+                    100000
+                  </a>
+                </div>
+                <div
+                  className="ch2 fl ph3 pv1"
+                >
+                  <div
+                    className="fw7"
+                  >
+                    Status
+                  </div>
+                  Closed
+                </div>
+                <div
+                  className="ch3 fl ph3 pv1"
+                >
+                  <div
+                    className="fw7"
+                  >
+                    DA Number
+                  </div>
+                  <span
+                    className="break-all"
+                  >
+                    01234567
+                  </span>
+                </div>
+              </div>
+              <div
+                className="cl"
+              >
+                <div
+                  className="ch4 fl ph3 pv1"
+                >
+                  <div
+                    className="fw7"
+                  >
+                    County
+                  </div>
+                  Clackamas
+                </div>
+                <div
+                  className="ch5 fl ph3 pv1"
+                >
+                  <div
+                    className="fw7"
+                  >
+                    Balance
+                  </div>
+                  $0.00
+                </div>
+                <div
+                  className="ch6 fl ph3 pv1"
+                >
+                  <div
+                    className="fw7"
+                  >
+                    DOB
+                  </div>
+                  <span>
+                    1970
+                  </span>
+                </div>
+                <div
+                  className="ch7 fl ph3 pv1"
+                >
+                  <div
+                    className="fw7"
+                  >
+                    Name
+                  </div>
+                  <span>
+                    COMMON A. NAME
+                  </span>
+                </div>
+              </div>
+            </div>
+            <ul
+              className="list"
+            >
+              <li>
+                <div
+                  className="relative br3 bg-white ma2"
+                  id="100000-1"
+                >
+                  <div
+                    className="relative connect connect-result pr6"
+                  >
+                    <h2
+                      className="dark-blue bg-washed-blue fw6 pv2 ph3 ma2 mb3 dib br3 relative outline-2-white z-1"
+                    >
+                      Eligible Nov 28, 2025
+                    </h2>
+                  </div>
+                  <div
+                    className="flex-l ph3 pb2"
+                  >
+                    <div
+                      className="w-100 w-40-l relative pr6 pr4-l"
+                    >
+                      <div
+                        className="relative mb3 connect connect-time"
+                      >
+                        <i
+                          aria-hidden="true"
+                          className="absolute fas fa-clock dark-blue bg-white outline-2-white z-1"
+                        />
+                        <div
+                          className="ml3 pl1"
+                        >
+                          <div
+                            className="false"
+                          >
+                            <span
+                              className="fw7"
+                            >
+                              Time: 
+                            </span>
+                            137.225(7)(b) – Seven years from most recent other conviction from case 
+                            <a
+                              className="underline"
+                              href="#210000"
+                            >
+                              210000
+                            </a>
+                            .
+                          </div>
+                        </div>
+                      </div>
+                      <div
+                        className="relative mb3 connect connect-type"
+                      >
+                        <i
+                          aria-hidden="true"
+                          className="absolute fas fa-circle gray outline-2-white z-1"
+                        />
+                        <div
+                          className="ml3 pl1"
+                        >
+                          <div
+                            className="false"
+                          >
+                            <span
+                              className="fw7"
+                            >
+                              Type: 
+                            </span>
+                            Felony Class B – Convictions that fulfill the conditions of 137.225(1)(b) are eligible
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div
+                      className="w-100 w-60-l pr3 pr6-l"
+                    >
+                      <ul
+                        className="list"
+                      >
+                        <li
+                          className="flex mb2"
+                        >
+                          <span
+                            className="w6rem shrink-none fw7"
+                          >
+                            Charge
+                          </span>
+                          164057-Aggravated Theft in the First Degree
+                        </li>
+                        <li
+                          className="flex mb2"
+                        >
+                          <span
+                            className="w6rem shrink-none fw7"
+                          >
+                            Severity
+                          </span>
+                           
+                          Felony Class B
+                        </li>
+                        <li
+                          className="flex mb2"
+                        >
+                          <span
+                            className="w6rem shrink-none fw7"
+                          >
+                            Disposition
+                          </span>
+                           
+                          Convicted - Aug 16, 2016
+                        </li>
+                        <li
+                          className="flex mb2"
+                        >
+                          <span
+                            className="w6rem shrink-none fw7"
+                          >
+                            Charged
+                          </span>
+                           
+                          Jul 16, 2016
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                  <div
+                    className="bt b--light-gray pt2 mh3 pb2"
+                  >
+                    <div
+                      className=""
+                    >
+                      <button
+                        aria-controls="panel--disclosure"
+                        aria-expanded={false}
+                        data-reach-disclosure-button=""
+                        data-state="collapsed"
+                        onClick={[Function]}
+                      >
+                        <span
+                          className="flex items-center fw5 mid-gray link hover-blue pb1"
+                        >
+                          More Info
+                          <span
+                            aria-hidden="true"
+                            className="fas fa-angle-down pt1 pl1"
+                          />
+                        </span>
+                      </button>
+                      <div
+                        className="pt2"
+                        data-reach-disclosure-panel=""
+                        data-state="collapsed"
+                        hidden={true}
+                        id="panel--disclosure"
+                      >
+                        <div
+                          className="mb2"
+                        >
+                          Class B felony convictions are generally eligible under ORS 137.225(1)(b). Class B felony dismissals are always eligible under 137.225(1)(d).
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </li>
+        <li>
+          <div
+            className="f6 f5-l bg-gray-blue-2 shadow br3 pa1 mb4"
+            id="110000"
+          >
+            <div
+              className="cf relative pv2 pr5 pr6-ns"
+            >
+              <div
+                className="cf mb2"
+              >
+                <div
+                  className="ch1 fl ph3 pv1"
+                >
+                  <div
+                    className="fw7"
+                  >
+                    Case
+                  </div>
+                  <a
+                    className="link bb hover-blue"
+                    href="http://localhost:5000/api/case_detail_page/"
+                    rel="noreferrer"
+                    target="_blank"
+                  >
+                    110000
+                  </a>
+                </div>
+                <div
+                  className="ch2 fl ph3 pv1"
+                >
+                  <div
+                    className="fw7"
+                  >
+                    Status
+                  </div>
+                  Closed
+                </div>
+                <div
+                  className="ch3 fl ph3 pv1"
+                >
+                  <div
+                    className="fw7"
+                  >
+                    DA Number
+                  </div>
+                  <span
+                    className="break-all"
+                  >
+                    01234567
+                  </span>
+                </div>
+              </div>
+              <div
+                className="cl"
+              >
+                <div
+                  className="ch4 fl ph3 pv1"
+                >
+                  <div
+                    className="fw7"
+                  >
+                    County
+                  </div>
+                  Baker
+                </div>
+                <div
+                  className="ch5 fl ph3 pv1"
+                >
+                  <div
+                    className="fw7"
+                  >
+                    Balance
+                  </div>
+                  $0.00
+                </div>
+                <div
+                  className="ch6 fl ph3 pv1"
+                >
+                  <div
+                    className="fw7"
+                  >
+                    DOB
+                  </div>
+                  <span>
+                    1970
+                  </span>
+                </div>
+                <div
+                  className="ch7 fl ph3 pv1"
+                >
+                  <div
+                    className="fw7"
+                  >
+                    Name
+                  </div>
+                  <span>
+                    COMMON NAME
+                  </span>
+                </div>
+              </div>
+            </div>
+            <ul
+              className="list"
+            >
+              <li>
+                <div
+                  className="relative br3 bg-white ma2"
+                  id="110000-1"
+                >
+                  <div
+                    className="relative connect connect-result pr6"
+                  >
+                    <h2
+                      className="green bg-washed-green fw6 pv2 ph3 ma2 mb3 dib br3 relative outline-2-white z-1"
+                    >
+                      Eligible Now
+                    </h2>
+                  </div>
+                  <div
+                    className="flex-l ph3 pb2"
+                  >
+                    <div
+                      className="w-100 w-40-l relative pr6 pr4-l"
+                    >
+                      <div
+                        className="relative mb3 connect connect-time"
+                      >
+                        <i
+                          aria-hidden="true"
+                          className="absolute fas fa-check-circle green bg-white outline-2-white z-1"
+                        />
+                        <div
+                          className="ml3 pl1"
+                        >
+                          <span
+                            className="fw7"
+                          >
+                            Time:
+                          </span>
+                           Eligible Now
+                        </div>
+                      </div>
+                      <div
+                        className="relative mb3 connect connect-type"
+                      >
+                        <i
+                          aria-hidden="true"
+                          className="absolute fas fa-circle gray outline-2-white z-1"
+                        />
+                        <div
+                          className="ml3 pl1"
+                        >
+                          <div
+                            className="false"
+                          >
+                            <span
+                              className="fw7"
+                            >
+                              Type: 
+                            </span>
+                            Misdemeanor Class A – Eligible under 137.225(1)(b)
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div
+                      className="w-100 w-60-l pr3 pr6-l"
+                    >
+                      <ul
+                        className="list"
+                      >
+                        <li
+                          className="flex mb2"
+                        >
+                          <span
+                            className="w6rem shrink-none fw7"
+                          >
+                            Charge
+                          </span>
+                          164057-Theft in the Second Degree
+                        </li>
+                        <li
+                          className="flex mb2"
+                        >
+                          <span
+                            className="w6rem shrink-none fw7"
+                          >
+                            Severity
+                          </span>
+                           
+                          Misdemeanor Class A
+                        </li>
+                        <li
+                          className="flex mb2"
+                        >
+                          <span
+                            className="w6rem shrink-none fw7"
+                          >
+                            Disposition
+                          </span>
+                           
+                          Convicted - May 2, 2015
+                        </li>
+                        <li
+                          className="flex mb2"
+                        >
+                          <span
+                            className="w6rem shrink-none fw7"
+                          >
+                            Charged
+                          </span>
+                           
+                          Apr 2, 2015
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                  <div
+                    className="bt b--light-gray pt2 mh3 pb2"
+                  >
+                    <div
+                      className=""
+                    >
+                      <button
+                        aria-controls="panel--disclosure"
+                        aria-expanded={false}
+                        data-reach-disclosure-button=""
+                        data-state="collapsed"
+                        onClick={[Function]}
+                      >
+                        <span
+                          className="flex items-center fw5 mid-gray link hover-blue pb1"
+                        >
+                          More Info
+                          <span
+                            aria-hidden="true"
+                            className="fas fa-angle-down pt1 pl1"
+                          />
+                        </span>
+                      </button>
+                      <div
+                        className="pt2"
+                        data-reach-disclosure-panel=""
+                        data-state="collapsed"
+                        hidden={true}
+                        id="panel--disclosure"
+                      >
+                        <div
+                          className="mb2"
+                        >
+                          Convictions for misdemeanors are generally eligible under ORS 137.225(1)(b).
+                        </div>
+                        <div
+                          className="mb2"
+                        >
+                          Exceptions include convictions related to sex, child and elder abuse, and driving, including DUII.
+                        </div>
+                        <div
+                          className="mb2"
+                        >
+                          Dismissals for misdemeanors are generally eligible under ORS 137.225(1)(d). Exceptions include cases dismissed due to successful completion of DUII diversion.
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </li>
+        <li>
+          <div
+            className="f6 f5-l bg-gray-blue-2 shadow br3 pa1 mb4"
+            id="120000"
+          >
+            <div
+              className="cf relative pv2 pr5 pr6-ns"
+            >
+              <div
+                className="cf mb2"
+              >
+                <div
+                  className="ch1 fl ph3 pv1"
+                >
+                  <div
+                    className="fw7"
+                  >
+                    Case
+                  </div>
+                  <a
+                    className="link bb hover-blue"
+                    href="http://localhost:5000/api/case_detail_page/"
+                    rel="noreferrer"
+                    target="_blank"
+                  >
+                    120000
+                  </a>
+                </div>
+                <div
+                  className="ch2 fl ph3 pv1"
+                >
+                  <div
+                    className="fw7"
+                  >
+                    Status
+                  </div>
+                  Closed
+                </div>
+                <div
+                  className="ch3 fl ph3 pv1"
+                >
+                  <div
+                    className="fw7"
+                  >
+                    DA Number
+                  </div>
+                  <span
+                    className="break-all"
+                  >
+                    01234567
+                  </span>
+                </div>
+              </div>
+              <div
+                className="cl"
+              >
+                <div
+                  className="ch4 fl ph3 pv1"
+                >
+                  <div
+                    className="fw7"
+                  >
+                    County
+                  </div>
+                  Baker
+                </div>
+                <div
+                  className="ch5 fl ph3 pv1"
+                >
+                  <div
+                    className="fw7"
+                  >
+                    Balance
+                  </div>
+                  $0.00
+                </div>
+                <div
+                  className="ch6 fl ph3 pv1"
+                >
+                  <div
+                    className="fw7"
+                  >
+                    DOB
+                  </div>
+                  <span>
+                    1970
+                  </span>
+                </div>
+                <div
+                  className="ch7 fl ph3 pv1"
+                >
+                  <div
+                    className="fw7"
+                  >
+                    Name
+                  </div>
+                  <span>
+                    COMMON A NAME
+                  </span>
+                </div>
+              </div>
+            </div>
+            <ul
+              className="list"
+            >
+              <li>
+                <div
+                  className="relative br3 bg-white ma2"
+                  id="120000-1"
+                >
+                  <div
+                    className="relative connect connect-result pr6"
+                  >
+                    <h2
+                      className="green bg-washed-green fw6 pv2 ph3 ma2 mb3 dib br3 relative outline-2-white z-1"
+                    >
+                      Eligible Now
+                    </h2>
+                  </div>
+                  <div
+                    className="flex-l ph3 pb2"
+                  >
+                    <div
+                      className="w-100 w-40-l relative pr6 pr4-l"
+                    >
+                      <div
+                        className="relative mb3 connect connect-time"
+                      >
+                        <i
+                          aria-hidden="true"
+                          className="absolute fas fa-check-circle green bg-white outline-2-white z-1"
+                        />
+                        <div
+                          className="ml3 pl1"
+                        >
+                          <span
+                            className="fw7"
+                          >
+                            Time:
+                          </span>
+                           Eligible Now
+                        </div>
+                      </div>
+                      <div
+                        className="relative mb3 connect connect-type"
+                      >
+                        <i
+                          aria-hidden="true"
+                          className="absolute fas fa-circle gray outline-2-white z-1"
+                        />
+                        <div
+                          className="ml3 pl1"
+                        >
+                          <div
+                            className="false"
+                          >
+                            <span
+                              className="fw7"
+                            >
+                              Type: 
+                            </span>
+                            Marijuana Violation – Eligible under 475B.401
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div
+                      className="w-100 w-60-l pr3 pr6-l"
+                    >
+                      <ul
+                        className="list"
+                      >
+                        <li
+                          className="flex mb2"
+                        >
+                          <span
+                            className="w6rem shrink-none fw7"
+                          >
+                            Charge
+                          </span>
+                          475000-Poss under oz Marijuana
+                        </li>
+                        <li
+                          className="flex mb2"
+                        >
+                          <span
+                            className="w6rem shrink-none fw7"
+                          >
+                            Severity
+                          </span>
+                           
+                          violation
+                        </li>
+                        <li
+                          className="flex mb2"
+                        >
+                          <span
+                            className="w6rem shrink-none fw7"
+                          >
+                            Disposition
+                          </span>
+                           
+                          Convicted - May 2, 2014
+                        </li>
+                        <li
+                          className="flex mb2"
+                        >
+                          <span
+                            className="w6rem shrink-none fw7"
+                          >
+                            Charged
+                          </span>
+                           
+                          Apr 2, 2014
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                  <div
+                    className="bt b--light-gray pt2 mh3 pb2"
+                  >
+                    <div
+                      className=""
+                    >
+                      <button
+                        aria-controls="panel--disclosure"
+                        aria-expanded={false}
+                        data-reach-disclosure-button=""
+                        data-state="collapsed"
+                        onClick={[Function]}
+                      >
+                        <span
+                          className="flex items-center fw5 mid-gray link hover-blue pb1"
+                        >
+                          More Info
+                          <span
+                            aria-hidden="true"
+                            className="fas fa-angle-down pt1 pl1"
+                          />
+                        </span>
+                      </button>
+                      <div
+                        className="pt2"
+                        data-reach-disclosure-panel=""
+                        data-state="collapsed"
+                        hidden={true}
+                        id="panel--disclosure"
+                      >
+                        <div
+                          className="mb2"
+                        >
+                          Under 475B.401, convictions for possession of less than an ounce of marijuana are always eligible, regardless of any time eligibility restrictions that would normally apply.
+                        </div>
+                        <div
+                          className="mb2"
+                        >
+                              This charge type is identifiable as any marijuana charge whose level is Violation.
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </li>
+      </ul>
     </div>
   </section>
   <div

@@ -1,4 +1,6 @@
+import React from "react";
 import { useAppSelector } from "../../redux/hooks";
+import { RecordData } from "../RecordSearch/Record/types";
 import useSetTitle from "../../hooks/useSetTitle";
 import DemoInfo from "./DemoInfo";
 import SearchPanel from "../RecordSearch/SearchPanel";
@@ -7,10 +9,11 @@ import Record from "../RecordSearch/Record";
 import Assumptions from "../RecordSearch/Assumptions";
 
 // Can use this for dev
-// import record from "./demoResponse";
+// import demoRecord from "./demoRecord";
 
-export default function Demo() {
-  const record = useAppSelector((state) => state.search.record);
+export default function Demo({ record }: { record?: RecordData }) {
+  let record_ = useAppSelector((state) => state.search.record);
+  record = record ?? record_;
 
   useSetTitle("Demo");
 
