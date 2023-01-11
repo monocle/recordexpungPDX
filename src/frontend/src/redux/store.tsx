@@ -1,25 +1,21 @@
 // See the following guides for an explanation:
 // https://redux-starter-kit.js.org/usage/usage-guide
 // https://redux.js.org/recipes/usage-with-typescript
-import { configureStore, getDefaultMiddleware } from "@reduxjs/toolkit";
+import { configureStore } from "@reduxjs/toolkit";
 import { combineReducers } from "redux";
-
-// Reducers:
 import { searchReducer } from "./search/reducer";
+import demoReducer from "./demoSlice";
 
 const rootReducer = combineReducers({
   search: searchReducer,
+  demo: demoReducer,
 });
 
 const store = configureStore({
   reducer: rootReducer,
-  middleware: [...getDefaultMiddleware()],
 });
 
 export type AppState = ReturnType<typeof rootReducer>;
-
-export default store;
-
 export type RootState = ReturnType<typeof store.getState>;
-
 export type AppDispatch = typeof store.dispatch;
+export default store;

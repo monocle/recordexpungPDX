@@ -50,7 +50,7 @@ function validateSearchResponseData(data: SearchResponse): boolean {
 
 function buildSearchRequest() {
   return {
-    demo: store.getState().search.demo,
+    demo: store.getState().demo.isOn,
     aliases: store.getState().search.aliases,
     today: store.getState().search.today,
     questions: store.getState().search.questions,
@@ -60,7 +60,7 @@ function buildSearchRequest() {
 
 function buildAndSendSearchRequest(dispatch: any): any {
   return apiService<SearchResponse>(dispatch, {
-    url: store.getState().search.demo ? "/api/demo" : "/api/search",
+    url: store.getState().demo.isOn ? "/api/demo" : "/api/search",
     data: buildSearchRequest(),
     method: "post",
     withCredentials: true,
@@ -278,7 +278,7 @@ export function downloadExpungementPacket(
     return apiService<SearchResponse>(dispatch, {
       url: "/api/expungement-packet",
       data: {
-        demo: store.getState().search.demo,
+        demo: store.getState().demo.isOn,
         aliases: store.getState().search.aliases,
         questions: store.getState().search.questions,
         edits: store.getState().search.edits,

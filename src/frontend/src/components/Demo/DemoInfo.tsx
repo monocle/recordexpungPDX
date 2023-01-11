@@ -1,6 +1,5 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { useNavigate } from "react-router-dom";
 
 const examplesData = [
   {
@@ -88,8 +87,6 @@ function FormattedExample({
 }
 
 export default function DemoInfo() {
-  const navigate = useNavigate();
-
   return (
     <article className="lh-copy">
       <div className="bg-white shadow bl bw3 b--blue mv4 pv4 ph4 ph5-l br3">
@@ -109,9 +106,8 @@ export default function DemoInfo() {
             className="link bb hover-blue"
             onClick={() => window.scrollTo(0, 0)}
           >
-            {" "}
-            one of our partners{" "}
-          </Link>
+            one of our partners
+          </Link>{" "}
           for assistance. This software is not standalone legal advice.
         </p>
 
@@ -122,12 +118,13 @@ export default function DemoInfo() {
 
         <p className="mb4">
           Or,{" "}
-          <button
+          <Link
+            to="/oeci"
             className="link bb mid-gray hover-blue"
-            onClick={() => navigate("/oeci")}
+            onClick={() => window.scrollTo(0, 0)}
           >
             log in to OECI
-          </button>
+          </Link>
           .
         </p>
         <div>

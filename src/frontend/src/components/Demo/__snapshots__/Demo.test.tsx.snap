@@ -30,10 +30,9 @@ exports[`renders correctly 1`] = `
           href="/"
           onClick={[Function]}
         >
-           
           one of our partners
-           
         </a>
+         
         for assistance. This software is not standalone legal advice.
       </p>
       <p
@@ -46,12 +45,13 @@ exports[`renders correctly 1`] = `
       >
         Or,
          
-        <button
+        <a
           className="link bb mid-gray hover-blue"
+          href="/oeci"
           onClick={[Function]}
         >
           log in to OECI
-        </button>
+        </a>
         .
       </p>
       <div>

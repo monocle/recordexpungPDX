@@ -1,5 +1,6 @@
 import React from "react";
-import { useAppSelector } from "../../redux/hooks";
+import { useAppSelector, useAppDispatch } from "../../redux/hooks";
+import { start as startDemo } from "../../redux/demoSlice";
 import { RecordData } from "../RecordSearch/Record/types";
 import useSetTitle from "../../hooks/useSetTitle";
 import DemoInfo from "./DemoInfo";
@@ -16,6 +17,7 @@ export default function Demo({ record }: { record?: RecordData }) {
   record = record ?? record_;
 
   useSetTitle("Demo");
+  useAppDispatch()(startDemo());
 
   return (
     <main className="mw8 center f6 f5-l ph2">
