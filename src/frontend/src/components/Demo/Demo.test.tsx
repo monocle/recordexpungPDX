@@ -6,6 +6,9 @@ import "@testing-library/jest-dom";
 import { Provider } from "react-redux";
 import store from "../../redux/store";
 import Demo from ".";
+import johnCommonRecord from "../../data/demo/johnCommon";
+import multipleChargesRecord from "../../data/demo/multipleCharges";
+import blankRecord from "../../data/blankRecord";
 
 const mockUseAppSelector = jest.fn();
 
@@ -24,14 +27,16 @@ function doRender() {
   );
 }
 
-it("renders correctly without a record", () => {
-  const RealDate = Date;
-  const mockDate = new Date(2023, 0, 11);
-  // @ts-ignore
-  const spy = jest.spyOn(global, "Date").mockImplementation(() => mockDate);
-  // @ts-ignore
-  spy.now = RealDate.now;
+beforeAll(() => {
+  jest.useFakeTimers();
+  jest.setSystemTime(new Date(2023, 0, 11));
+});
 
+afterAll(() => {
+  jest.useRealTimers();
+});
+
+it("renders correctly without a record", () => {
   const tree = renderer
     .create(
       <Provider store={store}>
@@ -42,8 +47,45 @@ it("renders correctly without a record", () => {
     )
     .toJSON();
   expect(tree).toMatchSnapshot();
+});
 
-  global.Date = RealDate;
+it("renders correctly with John Common demo record", () => {
+  const tree = renderer
+    .create(
+      <Provider store={store}>
+        <MemoryRouter>
+          <Demo record={johnCommonRecord} />
+        </MemoryRouter>
+      </Provider>
+    )
+    .toJSON();
+  expect(tree).toMatchSnapshot();
+});
+
+it("renders correctly with Multiple Charges demo record", () => {
+  const tree = renderer
+    .create(
+      <Provider store={store}>
+        <MemoryRouter>
+          <Demo record={multipleChargesRecord} />
+        </MemoryRouter>
+      </Provider>
+    )
+    .toJSON();
+  expect(tree).toMatchSnapshot();
+});
+
+it("renders correctly with an empty record", () => {
+  const tree = renderer
+    .create(
+      <Provider store={store}>
+        <MemoryRouter>
+          <Demo record={blankRecord} />
+        </MemoryRouter>
+      </Provider>
+    )
+    .toJSON();
+  expect(tree).toMatchSnapshot();
 });
 
 describe("Without a record", () => {
