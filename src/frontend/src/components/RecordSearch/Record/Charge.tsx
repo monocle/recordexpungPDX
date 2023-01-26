@@ -1,7 +1,6 @@
 import React from "react";
 import Eligibility from "./Eligibility";
-import TimeEligibility from "./TimeEligibility";
-import TypeEligibility from "./TypeEligibility";
+import EligibilityReasons from "./EligibilityReasons";
 import EditChargePanel from "./EditChargePanel";
 import ExpungementRules from "./ExpungementRules";
 import EditButton from "./EditButton";
@@ -53,6 +52,10 @@ export default class Charge extends React.Component<Props, State> {
       expungement_result,
       expungement_rules,
     } = this.props.charge;
+    const shouldShowTimeEligibilityReasons =
+      (expungement_result.type_eligibility.status === "Eligible" ||
+        expungement_result.type_eligibility.status === "Needs More Analysis") &&
+      expungement_result.time_eligibility;
 
     const dispositionEvent = (disposition: any) => {
       let dispositionEvent;
@@ -71,30 +74,6 @@ export default class Charge extends React.Component<Props, State> {
         dispositionEvent += " (Amended)";
       }
       return dispositionEvent;
-    };
-
-    const buildDisposition = (disposition: any) => {
-      return (
-        <li className="flex mb2">
-          <span className="w6rem shrink-none fw7">Disposition</span>{" "}
-          {dispositionEvent(disposition)}
-        </li>
-      );
-    };
-
-    const buildRecordTime = () => {
-      if (
-        (expungement_result.type_eligibility.status === "Eligible" ||
-          expungement_result.type_eligibility.status ===
-            "Needs More Analysis") &&
-        expungement_result.time_eligibility
-      ) {
-        return (
-          <TimeEligibility
-            time_eligibility={expungement_result.time_eligibility}
-          />
-        );
-      }
     };
 
     return (
@@ -133,9 +112,15 @@ export default class Charge extends React.Component<Props, State> {
 
             <div className="flex-l ph3 pb2">
               <div className="w-100 w-40-l relative pr6 pr4-l">
-                {buildRecordTime()}
-                <TypeEligibility
-                  type_eligibility={expungement_result.type_eligibility}
+                {shouldShowTimeEligibilityReasons && (
+                  <EligibilityReasons
+                    kind="time"
+                    eligibility={expungement_result.time_eligibility}
+                  />
+                )}
+                <EligibilityReasons
+                  kind="type"
+                  eligibility={expungement_result.type_eligibility}
                 />
               </div>
               <div className="w-100 w-60-l pr3 pr6-l">
@@ -148,7 +133,10 @@ export default class Charge extends React.Component<Props, State> {
                     <span className="w6rem shrink-none fw7">Severity</span>{" "}
                     {level}
                   </li>
-                  {buildDisposition(disposition)}
+                  <li className="flex mb2">
+                    <span className="w6rem shrink-none fw7">Disposition</span>{" "}
+                    {dispositionEvent(disposition)}
+                  </li>
                   <li className="flex mb2">
                     <span className="w6rem shrink-none fw7">Charged</span>{" "}
                     {date}

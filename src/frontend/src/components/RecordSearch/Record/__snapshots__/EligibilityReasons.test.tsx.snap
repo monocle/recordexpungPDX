@@ -1,0 +1,124 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`For time eligibility renders correctly for a non specific status 1`] = `
+<div
+  className="relative mb3 connect connect-time"
+>
+  <i
+    aria-hidden="true"
+    className="absolute fas fa-clock dark-blue bg-white outline-2-white z-1"
+  />
+  <div
+    className="ml3 pl1"
+  >
+    <div
+      className=""
+    >
+      <span
+        className="fw7"
+      >
+        Time: 
+      </span>
+      a good reason
+    </div>
+  </div>
+</div>
+`;
+
+exports[`For time eligibility renders correctly for an 'Eligible' status 1`] = `
+<div
+  className="relative mb3 connect connect-time"
+>
+  <i
+    aria-hidden="true"
+    className="absolute fas fa-check-circle green bg-white outline-2-white z-1"
+  />
+  <div
+    className="ml3 pl1"
+  >
+    <span
+      className="fw7"
+    >
+      Time:
+    </span>
+     Eligible Now
+  </div>
+</div>
+`;
+
+exports[`For type eligibility renders correctly for a non specific status 1`] = `"Unknown type eligibility"`;
+
+exports[`For type eligibility renders correctly for an 'Eligible' status 1`] = `
+<div
+  className="relative mb3 connect connect-type"
+>
+  <i
+    aria-hidden="true"
+    className="absolute fas fa-circle gray bg-white outline-2-white z-1"
+  />
+  <div
+    className="ml3 pl1"
+  >
+    <div
+      className=""
+    >
+      <span
+        className="fw7"
+      >
+        Type: 
+      </span>
+      a good reason
+    </div>
+  </div>
+</div>
+`;
+
+exports[`For type eligibility renders correctly for an 'Ineligible' status 1`] = `
+<div
+  className="relative mb3 connect connect-type"
+>
+  <i
+    aria-hidden="true"
+    className="absolute fas fa-times-circle red bg-white outline-2-white z-1"
+  />
+  <div
+    className="ml3 pl1"
+  >
+    <div
+      className=""
+    >
+      <span
+        className="fw7"
+      >
+        Type: 
+      </span>
+      a good reason
+    </div>
+  </div>
+</div>
+`;
+
+exports[`For type eligibility renders correctly for an 'Needs More Analysis' status 1`] = `
+<div
+  className="relative mb3 connect connect-type"
+>
+  <i
+    aria-hidden="true"
+    className="absolute fas fa-question-circle purple bg-white outline-2-white z-1"
+  />
+  <div
+    className="ml3 pl1"
+  >
+    <div
+      className=""
+    >
+      <span
+        className="fw7"
+      >
+        Type: 
+      </span>
+      a good reason
+    </div>
+  </div>
+</div>
+`;

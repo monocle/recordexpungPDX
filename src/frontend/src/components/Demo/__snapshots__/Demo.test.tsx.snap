@@ -956,13 +956,13 @@ exports[`renders correctly with John Common demo record 1`] = `
                       >
                         <i
                           aria-hidden="true"
-                          className="absolute fas fa-circle gray outline-2-white z-1"
+                          className="absolute fas fa-circle gray bg-white outline-2-white z-1"
                         />
                         <div
                           className="ml3 pl1"
                         >
                           <div
-                            className="false"
+                            className=""
                           >
                             <span
                               className="fw7"
@@ -1203,7 +1203,7 @@ exports[`renders correctly with John Common demo record 1`] = `
                           className="ml3 pl1"
                         >
                           <div
-                            className="false"
+                            className=""
                           >
                             <span
                               className="fw7"
@@ -1245,7 +1245,7 @@ exports[`renders correctly with John Common demo record 1`] = `
                           className="ml3 pl1"
                         >
                           <div
-                            className="false"
+                            className=""
                           >
                             <span
                               className="fw7"
@@ -1541,7 +1541,7 @@ exports[`renders correctly with John Common demo record 1`] = `
                           className="ml3 pl1"
                         >
                           <div
-                            className="false"
+                            className=""
                           >
                             <span
                               className="fw7"
@@ -1564,13 +1564,13 @@ exports[`renders correctly with John Common demo record 1`] = `
                       >
                         <i
                           aria-hidden="true"
-                          className="absolute fas fa-circle gray outline-2-white z-1"
+                          className="absolute fas fa-circle gray bg-white outline-2-white z-1"
                         />
                         <div
                           className="ml3 pl1"
                         >
                           <div
-                            className="false"
+                            className=""
                           >
                             <span
                               className="fw7"
@@ -1818,13 +1818,13 @@ exports[`renders correctly with John Common demo record 1`] = `
                       >
                         <i
                           aria-hidden="true"
-                          className="absolute fas fa-circle gray outline-2-white z-1"
+                          className="absolute fas fa-circle gray bg-white outline-2-white z-1"
                         />
                         <div
                           className="ml3 pl1"
                         >
                           <div
-                            className="false"
+                            className=""
                           >
                             <span
                               className="fw7"
@@ -2082,13 +2082,13 @@ exports[`renders correctly with John Common demo record 1`] = `
                       >
                         <i
                           aria-hidden="true"
-                          className="absolute fas fa-circle gray outline-2-white z-1"
+                          className="absolute fas fa-circle gray bg-white outline-2-white z-1"
                         />
                         <div
                           className="ml3 pl1"
                         >
                           <div
-                            className="false"
+                            className=""
                           >
                             <span
                               className="fw7"
@@ -3209,13 +3209,13 @@ exports[`renders correctly with Multiple Charges demo record 1`] = `
                       >
                         <i
                           aria-hidden="true"
-                          className="absolute fas fa-circle gray outline-2-white z-1"
+                          className="absolute fas fa-circle gray bg-white outline-2-white z-1"
                         />
                         <div
                           className="ml3 pl1"
                         >
                           <div
-                            className="false"
+                            className=""
                           >
                             <span
                               className="fw7"
@@ -3480,13 +3480,13 @@ exports[`renders correctly with Multiple Charges demo record 1`] = `
                       >
                         <i
                           aria-hidden="true"
-                          className="absolute fas fa-circle gray outline-2-white z-1"
+                          className="absolute fas fa-circle gray bg-white outline-2-white z-1"
                         />
                         <div
                           className="ml3 pl1"
                         >
                           <div
-                            className="false"
+                            className=""
                           >
                             <span
                               className="fw7"
@@ -3636,13 +3636,13 @@ exports[`renders correctly with Multiple Charges demo record 1`] = `
                       >
                         <i
                           aria-hidden="true"
-                          className="absolute fas fa-circle gray outline-2-white z-1"
+                          className="absolute fas fa-circle gray bg-white outline-2-white z-1"
                         />
                         <div
                           className="ml3 pl1"
                         >
                           <div
-                            className="false"
+                            className=""
                           >
                             <span
                               className="fw7"
@@ -3883,7 +3883,7 @@ exports[`renders correctly with Multiple Charges demo record 1`] = `
                           className="ml3 pl1"
                         >
                           <div
-                            className="false"
+                            className=""
                           >
                             <span
                               className="fw7"
