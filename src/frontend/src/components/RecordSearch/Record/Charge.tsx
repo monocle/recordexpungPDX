@@ -49,7 +49,6 @@ export default class Charge extends React.Component<Props, State> {
       disposition,
       statute,
       name,
-      type_name,
       level,
       expungement_result,
       expungement_rules,
@@ -119,7 +118,7 @@ export default class Charge extends React.Component<Props, State> {
                 />
               </div>
             )}
-            
+
             {this.props.showEditButtons && (
               <div className="absolute top-0 right-0 ph3 pv3">
                 <EditButton
@@ -137,7 +136,6 @@ export default class Charge extends React.Component<Props, State> {
                 {buildRecordTime()}
                 <TypeEligibility
                   type_eligibility={expungement_result.type_eligibility}
-                  type_name={type_name}
                 />
               </div>
               <div className="w-100 w-60-l pr3 pr6-l">

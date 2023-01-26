@@ -1,0 +1,47 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`renders correctly for a non specific status 1`] = `
+<div
+  className="relative mb3 connect connect-time"
+>
+  <i
+    aria-hidden="true"
+    className="absolute fas fa-clock dark-blue bg-white outline-2-white z-1"
+  />
+  <div
+    className="ml3 pl1"
+  >
+    <div
+      className=""
+    >
+      <span
+        className="fw7"
+      >
+        Time: 
+      </span>
+      a good reason
+    </div>
+  </div>
+</div>
+`;
+
+exports[`renders correctly for an 'Eligible' status 1`] = `
+<div
+  className="relative mb3 connect connect-time"
+>
+  <i
+    aria-hidden="true"
+    className="absolute fas fa-check-circle green bg-white outline-2-white z-1"
+  />
+  <div
+    className="ml3 pl1"
+  >
+    <span
+      className="fw7"
+    >
+      Time:
+    </span>
+     Eligible Now
+  </div>
+</div>
+`;
