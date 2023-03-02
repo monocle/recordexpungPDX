@@ -83,7 +83,7 @@ def assert_pdf_boolean_field(pdf: PDF, field_name: str, expected_field_names: Li
     form_data = {field_name: FormFilling.CHECK_MARK}
     expected_fields = {field_name: "/On" for field_name in expected_field_names}
 
-    pdf.update_annotations(form_data, opts={"assert_blank_pdf": True})
+    pdf.update_annotations(form_data)
     assert_pdf_values(pdf, expected_fields)
     assert_other_fields_not_checked(pdf, expected_fields)
 
@@ -192,7 +192,7 @@ class TestOregonPDF:
         assert_pdf_values(pdf, self.form_data_string_fields)
 
     def test_pdf_values_that_are_ignored_or_constant(self, pdf: PDF):
-        mapper = pdf.update_annotations()
+        mapper = pdf.update_annotations({})
         ignored_field_names = (field_name for field_name in self.ignored_fields.keys())
 
         assert set(mapper.ignored_keys) == set(ignored_field_names)
@@ -306,16 +306,13 @@ class TestOregonPDF:
             ],
         )
 
-    # TODO some fields seem to need a different calculation
-    # def test_font_is_decreased_as_needed(self, pdf: PDF):
-    #     form_data = {"date_of_birth": "123456789a1234567"}
-    #     pdf.update_annotations(form_data, {"assert_blank_pdf": True});
-    #     font_string = [annotation.DA for annotation in pdf.annotations if annotation.T == '(DOB)'][0]
+    def test_font_size_is_not_decreased_when_not_needed_for_date_of_arrest(self, pdf: PDF):
+        form_data = {"arrest_dates_all": "Oct 22, 1999; Dec 19, 2020; Jan 22, 2021"}
 
-    #     pdf.write('foo_test')
-    #     assert font_string == "(/TimesNewRoman 6 Tf 0 g)"
-    #     assert len(pdf.warnings) == 1
-    #     assert pdf.warnings[0] == "The font size of \"123456789a123456\" was shrunk to fit the bounding box of \"DOB\". An addendum might be required if it still doesn't fit."
+        pdf.update_annotations(form_data)
+
+        font_string = [annotation.DA for annotation in pdf.annotations if annotation.T == "(Date of arrest)"][0]
+        assert font_string == "(/TimesNewRoman 10 Tf 0 g)"
 
 
 class TestOregonWithConvictionOrderPDF:
@@ -348,7 +345,7 @@ class TestOregonWithConvictionOrderPDF:
             "(Conviction Charges)": "old conviction_charges",
         }
 
-        pdf.update_annotations(form_data, opts={"assert_blank_pdf": True})
+        pdf.update_annotations(form_data)
         assert_pdf_values(pdf, expected_pdf_fields)
 
 
@@ -380,7 +377,7 @@ class TestOregonWithArrestOrderPDF:
             "(Dismissed Dates)": "old dismissed_dates",
         }
 
-        pdf.update_annotations(form_data, opts={"assert_blank_pdf": True})
+        pdf.update_annotations(form_data)
         assert_pdf_values(pdf, expected_pdf_fields)
         # Validate downloaded PDF in Chrome, Firefox, Safari, Acrobat Reader and Preview
         # pdf.write('foo_test')

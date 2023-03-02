@@ -405,15 +405,11 @@ class FormFilling:
 # Note: when printing pdfrw objects to screen during debugginp, not all attributes are displayed. Stream objects
 # can have many more nested properties.
 class AcroFormMapper(UserDict):
-    def __init__(self, form_data: Dict[str, str] = None, opts: Dict[str, Union[str, bool]] = None):
+    def __init__(self, form_data: Dict[str, str] = None, definition="oregon_2_2023"):
         super().__init__()
-        if not opts:
-            opts = {}
 
-        self.definition = "oregon_2_2023"
-        self.should_log = opts.get("should_log") or False
         self.form_data = form_data or {}
-        self.data = getattr(self, self.definition)
+        self.data = getattr(self, definition)
         self.ignored_keys: Dict[str, None] = {}
 
     def __getitem__(self, key: str) -> str:
@@ -429,16 +425,10 @@ class AcroFormMapper(UserDict):
         if form_data_value:
             return form_data_value
 
-        if self.should_log:
-            print(f"[AcroFormMapper] No form data value found for: '{key}'. Using ''")
-
         return ""
 
     def __missing__(self, key: str) -> str:
-        self.ignored_keys[key] = None
-
-        if self.should_log:
-            print(f"[AcroFormMapper] Key not found: '{key}'. Using ''")
+        self.ignored_keys[key] = True
         return ""
 
     # Process to create the map:
@@ -464,7 +454,7 @@ class AcroFormMapper(UserDict):
         # "(Fingerprint number FPN  if known)"
         "(record of arrest with no charges filed)": "has_no_complaint",
         "(record of arrest with charges filed and the associated check all that apply)": lambda form: FormFilling.CHECK_MARK
-        if form["has_no_complaint"] == ""
+        if form.get("has_no_complaint") == ""
         else "",
         "(conviction)": "has_conviction",
         "(record of citation or charge that was dismissedacquitted)": "has_dismissed",
@@ -545,7 +535,7 @@ class PDF:
     BASE_DIR = path.join(Path(__file__).parent, "files")
 
     def __init__(self, base_filename: str, opts=None):
-        default_opts = {"full_path": False, "assert_blank_pdf": False}
+        default_opts = {"full_path": False, "assert_blank_pdf": False, "field_width_factors": {"(Date of arrest)": 3}}
         full_opts = {**default_opts, **(opts or {})}
 
         full_path = base_filename if full_opts.get("full_path") else self.get_filepath(base_filename)
@@ -553,6 +543,7 @@ class PDF:
         self.warnings: List[str] = []
         self.annotations = [annot for page in self._pdf.pages for annot in page.Annots or []]
         self.fields = {field.T: field for field in self._pdf.Root.AcroForm.Fields}
+        self.field_width_factors = full_opts.get("field_width_factors")
 
         if full_opts.get("assert_blank_pdf"):
             self._assert_blank_pdf()
@@ -572,6 +563,14 @@ class PDF:
         self.set_font(annotation)
         annotation.update(PdfDict(AP=""))
 
+    def adjust_field_width(self, annotation, factor: float = None):
+        width_factor = self.field_width_factors.get(annotation.T)
+        if width_factor is None:
+            return
+
+        x1, x2 = float(annotation.Rect[0]), float(annotation.Rect[2])
+        annotation.Rect[2] = x1 + (x2 - x1) * width_factor
+
     def set_font(self, annotation):
         x1, x2 = float(annotation.Rect[0]), float(annotation.Rect[2])
         max_chars = (x2 - x1) * 0.3125  # Times New Roman size 10
@@ -585,8 +584,8 @@ class PDF:
 
         annotation.DA = PdfString.encode(f"/{self.FONT_FAMILY} {font_size} Tf 0 g")
 
-    def update_annotations(self, form_data: Dict[str, str] = None, opts=None) -> AcroFormMapper:
-        mapper = AcroFormMapper(form_data, opts)
+    def update_annotations(self, form_data: Dict[str, str] = None, definition="oregon_2_2023") -> AcroFormMapper:
+        mapper = AcroFormMapper(form_data, definition)
 
         for annotation in self.annotations:
             new_value = mapper.get(annotation.T)
@@ -595,7 +594,9 @@ class PDF:
                 self.set_checkbox_on(annotation)
 
             if annotation.FT == self.TEXT_TYPE:
+                self.adjust_field_width(annotation)
                 self.set_text_value(annotation, new_value)
+                self.set_font(annotation)
 
         self._pdf.Root.AcroForm.update(PdfDict(NeedAppearances=PdfObject("true")))
         return mapper
