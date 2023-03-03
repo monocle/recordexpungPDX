@@ -32,18 +32,18 @@ class FormData:
     da_number: str
     sid: str
 
-    has_conviction: str
-    has_no_complaint: str
-    has_dismissed: str
-    has_contempt_of_court: str
+    has_conviction: bool
+    has_no_complaint: bool
+    has_dismissed: bool
+    has_contempt_of_court: bool
     conviction_dates: str
 
-    has_class_b_felony: str
-    has_class_c_felony: str
-    has_class_a_misdemeanor: str
-    has_class_bc_misdemeanor: str
-    has_violation_or_contempt_of_court: str
-    has_probation_revoked: str
+    has_class_b_felony: bool
+    has_class_c_felony: bool
+    has_class_a_misdemeanor: bool
+    has_class_bc_misdemeanor: bool
+    has_violation_or_contempt_of_court: bool
+    has_probation_revoked: bool
 
     dismissed_arrest_dates: str
     arresting_agency: str
@@ -80,8 +80,6 @@ class CertificateFormData:
 
 
 class FormFilling:
-    CHECK_MARK = " X"
-
     @staticmethod
     def build_zip(record_summary: RecordSummary, user_information: Dict[str, str]) -> Tuple[str, str]:
         temp_dir = mkdtemp()
@@ -240,17 +238,17 @@ class FormFilling:
             "case_name": case.summary.name,
             "da_number": case.summary.district_attorney_number,
             "sid": sid,
-            "has_conviction": cls.CHECK_MARK if has_conviction else "",
-            "has_no_complaint": cls.CHECK_MARK if has_no_complaint else "",
-            "has_dismissed": cls.CHECK_MARK if has_dismissals else "",
-            "has_contempt_of_court": cls.CHECK_MARK if has_contempt_of_court else "",
+            "has_conviction": has_conviction,
+            "has_no_complaint": has_no_complaint,
+            "has_dismissed": has_dismissals,
+            "has_contempt_of_court": has_contempt_of_court,
             "conviction_dates": "; ".join(conviction_dates),
-            "has_class_b_felony": cls.CHECK_MARK if has_class_b_felony else "",
-            "has_class_c_felony": cls.CHECK_MARK if has_class_c_felony else "",
-            "has_class_a_misdemeanor": cls.CHECK_MARK if has_class_a_misdemeanor else "",
-            "has_class_bc_misdemeanor": cls.CHECK_MARK if has_class_bc_misdemeanor else "",
-            "has_violation_or_contempt_of_court": cls.CHECK_MARK if has_violation_or_contempt_of_court else "",
-            "has_probation_revoked": cls.CHECK_MARK if has_probation_revoked else "",
+            "has_class_b_felony": has_class_b_felony,
+            "has_class_c_felony": has_class_c_felony,
+            "has_class_a_misdemeanor": has_class_a_misdemeanor,
+            "has_class_bc_misdemeanor": has_class_bc_misdemeanor,
+            "has_violation_or_contempt_of_court": has_violation_or_contempt_of_court,
+            "has_probation_revoked": has_probation_revoked,
             "dismissed_arrest_dates": "; ".join(dismissed_arrest_dates),
             "arresting_agency": "",
             "da_address": da_address,
@@ -415,7 +413,7 @@ class AcroFormMapper(UserDict):
     def __getitem__(self, key: str) -> str:
         value = super().__getitem__(key)
 
-        if value == "":
+        if value == "" or isinstance(value, bool):
             return value
 
         if callable(value):
@@ -453,16 +451,14 @@ class AcroFormMapper(UserDict):
         "(SID)": "sid",
         # "(Fingerprint number FPN  if known)"
         "(record of arrest with no charges filed)": "has_no_complaint",
-        "(record of arrest with charges filed and the associated check all that apply)": lambda form: FormFilling.CHECK_MARK
-        if form.get("has_no_complaint") == ""
-        else "",
+        "(record of arrest with charges filed and the associated check all that apply)": lambda form: not form.get("has_no_complaint"),
         "(conviction)": "has_conviction",
         "(record of citation or charge that was dismissedacquitted)": "has_dismissed",
         "(contempt of court finding)": "has_contempt_of_court",
         # "(finding of Guilty Except for Insanity GEI)"
         # "(provided in ORS 137223)"
-        "(I am not currently charged with a crime)": lambda _: FormFilling.CHECK_MARK,
-        "(The arrest or citation I want to set aside is not for a charge of Driving Under the Influence of)": lambda _: FormFilling.CHECK_MARK,
+        "(I am not currently charged with a crime)": True,
+        "(The arrest or citation I want to set aside is not for a charge of Driving Under the Influence of)": True,
         "(Date of conviction contempt finding or judgment of GEI)": "conviction_dates",
         # "(PSRB)"
         "(ORS 137225 does not prohibit a setaside of this conviction see Instructions)": "has_conviction",
@@ -490,7 +486,7 @@ class AcroFormMapper(UserDict):
         "(Arresting Agency)": "arresting_agency",
         "(no accusatory instrument was filed and at least 60 days have passed since the)": "has_no_complaint",
         "(an accusatory instrument was filed and I was acquitted or the case was dismissed)": "has_dismissed",
-        "(have sent)": lambda _: FormFilling.CHECK_MARK,
+        "(have sent)": True,
         # "(will send a copy of my fingerprints to the Department of State Police)"
         # "(Date)"
         # "(Signature)"
@@ -528,7 +524,6 @@ class AcroFormMapper(UserDict):
 class PDF:
     BUTTON_TYPE = "/Btn"
     TEXT_TYPE = "/Tx"
-    CHECK_MARK = FormFilling.CHECK_MARK
     FONT_FAMILY = "TimesNewRoman"
     FONT_SIZE = "10"
     FONT_SIZE_SMALL = "6"
@@ -590,7 +585,7 @@ class PDF:
         for annotation in self.annotations:
             new_value = mapper.get(annotation.T)
 
-            if annotation.FT == self.BUTTON_TYPE and new_value == self.CHECK_MARK:
+            if annotation.FT == self.BUTTON_TYPE and new_value:
                 self.set_checkbox_on(annotation)
 
             if annotation.FT == self.TEXT_TYPE and new_value != "":

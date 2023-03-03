@@ -142,16 +142,19 @@ def assert_pdf_values(pdf: PDF, expected: Dict[str, str]):
 
 
 def assert_other_fields_not_checked(pdf: PDF, checked_fields):
+    # If "(record of arrest with no charges filed)" is not check, then this will be checked.
+    # This behavior is checked in it's own test.
+    ignored = "(record of arrest with charges filed and the associated check all that apply)"
     annotation_dict = pdf.get_annotation_dict()
     constant_fields = TestOregonPDF.constant_fields.keys()
 
     for key, value in annotation_dict.items():
-        if not checked_fields.get(key) and key not in constant_fields:
-            assert value != "/On", key
+        if not checked_fields.get(key) and key not in constant_fields and key != ignored:
+            assert value is None, key
 
 
 def assert_pdf_boolean_field(pdf: PDF, field_name: str, expected_field_names: List[str]):
-    form_data = {field_name: FormFilling.CHECK_MARK}
+    form_data = {field_name: True}
     expected_fields = {field_name: "/On" for field_name in expected_field_names}
 
     pdf.update_annotations(form_data)
@@ -280,7 +283,7 @@ class TestOregonPDF:
         )
 
     def test_pdf_boolean_has_no_complaint_off(self, pdf: PDF):
-        form_data = {"has_no_complaint": ""}
+        form_data = {"has_no_complaint": False}
         expected_fields = {
             "(record of arrest with charges filed and the associated check all that apply)": "/On",
         }
@@ -392,7 +395,7 @@ class TestOregonWithConvictionOrderPDF:
         form_data = {
             # new form fields
             "sid": "new sid",
-            "has_no_complaint": FormFilling.CHECK_MARK,
+            "has_no_complaint": True,
             # old form fields
             "county": "old county",
             "case_number": "old number",
@@ -426,7 +429,7 @@ class TestOregonWithArrestOrderPDF:
         form_data = {
             # new form fields
             "sid": "new sid",
-            "has_no_complaint": FormFilling.CHECK_MARK,
+            "has_no_complaint": True,
             # old form fields
             "county": "old county",
             "case_number": "old number",
