@@ -3,9 +3,13 @@ from tempfile import mkdtemp
 from zipfile import ZipFile
 from typing import List, Dict
 import re
+from pathlib import Path
 
 import pytest
+from unittest.mock import patch
 
+from expungeservice.endpoints.demo import Demo
+from expungeservice.endpoints.search import Search
 from expungeservice.expunger import Expunger
 from expungeservice.form_filling import FormFilling, PDF, AcroFormMapper as AFM
 from expungeservice.record_merger import RecordMerger
@@ -13,6 +17,13 @@ from expungeservice.record_summarizer import RecordSummarizer
 from tests.factories.crawler_factory import CrawlerFactory
 from tests.fixtures.case_details import CaseDetails
 from tests.fixtures.john_doe import JohnDoe
+from tests.integration.form_filling_data import (
+    oregon_john_common_pdf_fields,
+    multnomah_arrest_john_common_pdf_fields,
+    multnomah_conviction_john_common_pdf_fields,
+    oregon_arrest_john_common_pdf_fields,
+    oregon_conviction_john_common_pdf_fields,
+)
 
 
 def test_normal_conviction_uses_multnomah_conviction_form():
@@ -35,6 +46,66 @@ def test_normal_conviction_uses_multnomah_conviction_form():
         zip_ref.extractall(temp_dir)
         for _root, _dir, files in os.walk(temp_dir):
             assert len(files) == 1
+
+
+#########################################
+
+
+class TestJohnCommonIntegration:
+    filename = "oregon.pdf"
+    expected_form_values = oregon_john_common_pdf_fields
+
+    @patch("expungeservice.form_filling.FormFilling._build_pdf_path")
+    @patch("expungeservice.form_filling.PdfWriter", autospec=True)
+    @patch("expungeservice.form_filling.ZipFile")
+    @patch("expungeservice.form_filling.mkdtemp")
+    def test_form_fields_are_filled(self, mock_mkdtemp, MockZipFile, MockPdfWriter, mock_build_pdf_path):
+        mock_mkdtemp.return_value = "foo"
+        mock_build_pdf_path.return_value = os.path.join(
+            Path(__file__).parent.parent, "expungeservice", "files", self.filename
+        )
+        alias = {"first_name": "john", "middle_name": "", "last_name": "common", "birth_date": ""}
+        user_information = {
+            "full_name": "John FullName Common",
+            "date_of_birth": "11/22/1999",
+            "mailing_address": "12345 NE Test Suite Drive #123",
+            "phone_number": "555-555-1234",
+            "city": "Portland",
+            "state": "OR",
+            "zip_code": "97222",
+        }
+
+        record_summary = Demo._build_record_summary([alias], {}, {}, Search._build_today("1/2/2023"))
+        FormFilling.build_zip(record_summary, user_information)
+
+        addpages_call_args_list = MockPdfWriter.return_value.addpages.call_args_list
+        for i, args_list in enumerate(addpages_call_args_list):
+            document_id = "document_" + str(i)
+            args, kwargs = args_list
+            pages = args[0]
+            for idx, page in enumerate(pages):
+                for annotation in page.Annots or []:
+                    assert self.expected_form_values[document_id][idx][annotation.T] == annotation.V
+
+
+class TestJohnCommonArrestIntegration(TestJohnCommonIntegration):
+    filename = "oregon_with_arrest_order.pdf"
+    expected_form_values = oregon_arrest_john_common_pdf_fields
+
+
+class TestJohnCommonConvictionIntegration(TestJohnCommonIntegration):
+    filename = "oregon_with_conviction_order.pdf"
+    expected_form_values = oregon_conviction_john_common_pdf_fields
+
+
+class TestJohnCommonMultnomahArrestIntegration(TestJohnCommonIntegration):
+    filename = "multnomah_arrest.pdf"
+    expected_form_values = multnomah_arrest_john_common_pdf_fields
+
+
+class TestJohnCommonMultnomahConvictionIntegration(TestJohnCommonIntegration):
+    filename = "multnomah_conviction.pdf"
+    expected_form_values = multnomah_conviction_john_common_pdf_fields
 
 
 #########################################

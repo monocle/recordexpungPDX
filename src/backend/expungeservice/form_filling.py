@@ -593,7 +593,7 @@ class PDF:
             if annotation.FT == self.BUTTON_TYPE and new_value == self.CHECK_MARK:
                 self.set_checkbox_on(annotation)
 
-            if annotation.FT == self.TEXT_TYPE:
+            if annotation.FT == self.TEXT_TYPE and new_value != "":
                 self.adjust_field_width(annotation)
                 self.set_text_value(annotation, new_value)
                 self.set_font(annotation)
