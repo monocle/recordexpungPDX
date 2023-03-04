@@ -233,14 +233,18 @@ class TestOregonPDF:
         "(an accusatory instrument was filed and I was acquitted or the case was dismissed)": "has_dismissed",
     }
 
+    @staticmethod
+    def get_all_field_names() -> set:
+        field_types = ["ignored_fields", "constant_fields", "form_data_string_fields", "form_data_boolean_fields"]
+        grouped_field_names = [(getattr(TestOregonPDF, type).keys()) for type in field_types]
+        return set(field_name for subgroup in grouped_field_names for field_name in subgroup)
+
     @pytest.fixture
     def pdf(self) -> PDF:
         return PDF("oregon", {"assert_blank_pdf": True})
 
     def test_all_the_fields_are_accounted_for(self, pdf: PDF):
-        field_types = ["ignored_fields", "constant_fields", "form_data_string_fields", "form_data_boolean_fields"]
-        grouped_field_names = [(getattr(self, type).keys()) for type in field_types]
-        field_names = set(field_name for subgroup in grouped_field_names for field_name in subgroup)
+        field_names = self.get_all_field_names()
 
         assert set(pdf.get_field_dict().keys()) == field_names
         assert set(anot.T for anot in pdf.annotations) == field_names
@@ -393,68 +397,106 @@ class TestOregonPDF:
 
 
 class TestOregonWithConvictionOrderPDF:
-    def test_both_old_and_new_fields_are_updated(self):
-        pdf = PDF("oregon_with_conviction_order", {"assert_blank_pdf": True})
-        form_data = {
-            # new form fields
-            "sid": "new sid",
-            "has_no_complaint": True,
-            # old form fields
-            "county": "old county",
-            "case_number": "old number",
-            "case_name": "old case_name",
-            "arrest_dates_all": "old arrest_dates_all",
-            "charges_all": "old charges_all",
-            "arresting_agency": "old arresting_agency",
-            "conviction_dates": "old conviction_dates",
-            "conviction_charges": "old conviction_charges",
-        }
-        expected_pdf_fields = {
-            "(SID)": "new sid",
-            "(record of arrest with no charges filed)": "/On",
-            "(no accusatory instrument was filed and at least 60 days have passed since the)": "/On",
-            "(County)": "old county",
-            "(Case Number)": "old number",
-            "(Case Name)": "old case_name",
-            "(Arrest Dates All)": "old arrest_dates_all",
-            "(Charges All)": "old charges_all",
-            "(Conviction Dates)": "old conviction_dates",
-            "(Conviction Charges)": "old conviction_charges",
-        }
+    filename = "oregon_with_conviction_order"
+    form_speficic_fields = {
+        "(County)": "",
+        "(Case Number)": "",
+        "(Case Name)": "",
+        "(Arrest Dates All)": "",
+        "(Charges All)": "",
+        "(Conviction Dates)": "",
+        "(Conviction Charges)": "",
+    }
+    form_data = {
+        "sid": "new sid",
+        "has_no_complaint": True,
+        "county": "old county",
+        "case_number": "old number",
+        "case_name": "old case_name",
+        "arrest_dates_all": "old arrest_dates_all",
+        "charges_all": "old charges_all",
+        "arresting_agency": "old arresting_agency",
+        "conviction_dates": "old conviction_dates",
+        "conviction_charges": "old conviction_charges",        
+    }
+    expected_pdf_fields = {
+        "(SID)": "new sid",
+        "(record of arrest with no charges filed)": "/On",
+        "(no accusatory instrument was filed and at least 60 days have passed since the)": "/On",
+        "(County)": "old county",
+        "(Case Number)": "old number",
+        "(Case Name)": "old case_name",
+        "(Arrest Dates All)": "old arrest_dates_all",
+        "(Charges All)": "old charges_all",
+        "(Conviction Dates)": "old conviction_dates",
+        "(Conviction Charges)": "old conviction_charges",
+    }
+    other_field_names = TestOregonPDF.get_all_field_names()
 
-        pdf.update_annotations(form_data)
-        assert_pdf_values(pdf, expected_pdf_fields)
+    @pytest.fixture
+    def pdf(self) -> PDF:
+        return PDF(self.filename, {"assert_blank_pdf": True})
+
+    @pytest.fixture
+    def all_field_names(self):
+        form_specific_field_names = set(key for key in self.form_speficic_fields.keys())
+        return form_specific_field_names.union(self.other_field_names)
+
+    def test_all_fields_are_accounted_for(self, pdf: PDF, all_field_names: set):
+        assert set(pdf.get_field_dict().keys()) == all_field_names
+
+        all_field_names.discard("(Arresting Agency)")
+        assert set(anot.T for anot in pdf.annotations if anot.T) == all_field_names
+ 
+    def test_both_old_and_new_fields_are_updated(self, pdf: PDF):
+        pdf.update_annotations(self.form_data)
+        assert_pdf_values(pdf, self.expected_pdf_fields)
 
 
-class TestOregonWithArrestOrderPDF:
-    def test_both_old_and_new_fields_are_updated(self):
-        pdf = PDF("oregon_with_arrest_order", {"assert_blank_pdf": True})
-        form_data = {
-            # new form fields
-            "sid": "new sid",
-            "has_no_complaint": True,
-            # old form fields
-            "county": "old county",
-            "case_number": "old number",
-            "case_name": "old case_name",
-            "dismissed_arrest_dates": "old dismissed_arrest_dates",
-            "dismissed_charges": "old dismissed_charges",
-            "arresting_agency": "old arresting_agency",
-            "dismissed_dates": "old dismissed_dates",
-        }
-        expected_pdf_fields = {
-            "(SID)": "new sid",
-            "(record of arrest with no charges filed)": "/On",
-            "(no accusatory instrument was filed and at least 60 days have passed since the)": "/On",
-            "(County)": "old county",
-            "(Case Number)": "old number",
-            "(Case Name)": "old case_name",
-            "(Dismissed Arrest Dates)": "old dismissed_arrest_dates",
-            "(Dismissed Charges)": "old dismissed_charges",
-            "(Dismissed Dates)": "old dismissed_dates",
-        }
+class TestOregonWithArrestOrderPDF(TestOregonWithConvictionOrderPDF):
+    filename = "oregon_with_arrest_order"
+    form_speficic_fields = {
+        "(County)": "",
+        "(Case Number)": "",
+        "(Case Name)": "",
+        "(Dismissed Arrest Dates)": "",
+        "(Dismissed Charges)": "",
+        "(Dismissed Dates)": "",
+    }
+    form_data = {
+        "sid": "new sid",
+        "has_no_complaint": True,        
+        "county": "old county",
+        "case_number": "old number",
+        "case_name": "old case_name",
+        "arrest_dates_all": "old arrest_dates_all",
+        "charges_all": "old charges_all",
+        "dismissed_arrest_dates": "old dismissed_arrest_dates",
+        "dismissed_charges": "old dismissed_charges",
+        "dismissed_dates": "old dismissed_dates",
+    }
+    expected_pdf_fields = {
+        "(SID)": "new sid",
+        "(record of arrest with no charges filed)": "/On",
+        "(no accusatory instrument was filed and at least 60 days have passed since the)": "/On",
+        "(County)": "old county",
+        "(Case Number)": "old number",
+        "(Case Name)": "old case_name",
+        "(Dismissed Arrest Dates)": "old dismissed_arrest_dates",
+        "(Dismissed Charges)": "old dismissed_charges",
+        "(Dismissed Dates)": "old dismissed_dates",
+    }
 
-        pdf.update_annotations(form_data)
-        assert_pdf_values(pdf, expected_pdf_fields)
-        # Validate downloaded PDF in Chrome, Firefox, Safari, Acrobat Reader and Preview
-        # pdf.write('foo_test')
+
+# class TestMultnomahWithArrestPDF(TestOregonWithConvictionOrderPDF):
+#     filename = "multnomah_arrest"
+#     definition = "multnomah"
+#     form_speficic_fields = {
+#         "(Case Number)": "",
+#     }
+#     form_data = {
+#     }
+#     expected_pdf_fields = {
+#     }
+  
+
