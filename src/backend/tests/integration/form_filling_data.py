@@ -255,7 +255,7 @@ oregon_arrest_john_common_pdf_fields = {
             "(My probation WAS revoked and 3 years have passed since the date of revocation)": None,
             "(Date of arrest)": "(Oct 22, 2019)",
             "(If no arrest date date of citation booking or incident)": None,
-            None: None,
+            "(Arresting Agency)": None,
         },
         2: {
             "(no accusatory instrument was filed and at least 60 days have passed since the)": None,
@@ -282,7 +282,7 @@ oregon_arrest_john_common_pdf_fields = {
             "(Case Name)": "(COMMON NAME)",
             "(Dismissed Arrest Dates)": "(Oct 22, 2019)",
             "(Dismissed Charges)": "(Obstruction Of Search Warrant)",
-            None: None,
+            "(Arresting Agency1)": None,
             "(Dismissed Dates)": "(Oct 22, 2019)",
         },
         4: {},
@@ -331,7 +331,7 @@ oregon_arrest_john_common_pdf_fields = {
             "(My probation WAS revoked and 3 years have passed since the date of revocation)": None,
             "(Date of arrest)": "(Jul 8, 2015)",
             "(If no arrest date date of citation booking or incident)": None,
-            None: None,
+            "(Arresting Agency)": None,
         },
         2: {
             "(no accusatory instrument was filed and at least 60 days have passed since the)": None,
@@ -358,7 +358,7 @@ oregon_arrest_john_common_pdf_fields = {
             "(Case Name)": "(COMMON NAME)",
             "(Dismissed Arrest Dates)": None,
             "(Dismissed Charges)": None,
-            None: None,
+            "(Arresting Agency1)": None,
             "(Dismissed Dates)": None,
         },
         4: {},
@@ -407,7 +407,7 @@ oregon_arrest_john_common_pdf_fields = {
             "(My probation WAS revoked and 3 years have passed since the date of revocation)": None,
             "(Date of arrest)": "(Jul 8, 2014)",
             "(If no arrest date date of citation booking or incident)": None,
-            None: None,
+            "(Arresting Agency)": None,
         },
         2: {
             "(no accusatory instrument was filed and at least 60 days have passed since the)": None,
@@ -434,7 +434,7 @@ oregon_arrest_john_common_pdf_fields = {
             "(Case Name)": "(COMMON A NAME)",
             "(Dismissed Arrest Dates)": None,
             "(Dismissed Charges)": None,
-            None: None,
+            "(Arresting Agency1)": None,
             "(Dismissed Dates)": None,
         },
         4: {},
@@ -497,7 +497,7 @@ oregon_conviction_john_common_pdf_fields = {
             "(My probation WAS revoked and 3 years have passed since the date of revocation)": None,
             "(Date of arrest)": "(Oct 22, 2019)",
             "(If no arrest date date of citation booking or incident)": None,
-            None: None,
+            "(Arresting Agency)": None,
         },
         2: {
             "(no accusatory instrument was filed and at least 60 days have passed since the)": None,
@@ -524,7 +524,7 @@ oregon_conviction_john_common_pdf_fields = {
             "(Case Name)": "(COMMON NAME)",
             "(Arrest Dates All)": "(Oct 22, 2019)",
             "(Charges All)": "(Obstruction Of Search Warrant)",
-            None: None,
+            "(Arresting Agency1)": None,
             "(Conviction Dates)": None,
             "(Conviction Charges)": None,
         },
@@ -574,7 +574,7 @@ oregon_conviction_john_common_pdf_fields = {
             "(My probation WAS revoked and 3 years have passed since the date of revocation)": None,
             "(Date of arrest)": "(Jul 8, 2015)",
             "(If no arrest date date of citation booking or incident)": None,
-            None: None,
+            "(Arresting Agency)": None,
         },
         2: {
             "(no accusatory instrument was filed and at least 60 days have passed since the)": None,
@@ -601,7 +601,7 @@ oregon_conviction_john_common_pdf_fields = {
             "(Case Name)": "(COMMON NAME)",
             "(Arrest Dates All)": "(Jul 8, 2015)",
             "(Charges All)": "(Theft In The Second Degree)",
-            None: None,
+            "(Arresting Agency1)": None,
             "(Conviction Dates)": "(Aug 8, 2015)",
             "(Conviction Charges)": "(Theft In The Second Degree)",
         },
@@ -651,7 +651,7 @@ oregon_conviction_john_common_pdf_fields = {
             "(My probation WAS revoked and 3 years have passed since the date of revocation)": None,
             "(Date of arrest)": "(Jul 8, 2014)",
             "(If no arrest date date of citation booking or incident)": None,
-            None: None,
+            "(Arresting Agency)": None,
         },
         2: {
             "(no accusatory instrument was filed and at least 60 days have passed since the)": None,
@@ -678,7 +678,7 @@ oregon_conviction_john_common_pdf_fields = {
             "(Case Name)": "(COMMON A NAME)",
             "(Arrest Dates All)": "(Jul 8, 2014)",
             "(Charges All)": "(Poss Under Oz Marijuana)",
-            None: None,
+            "(Arresting Agency1)": None,
             "(Conviction Dates)": "(Aug 8, 2014)",
             "(Conviction Charges)": "(Poss Under Oz Marijuana)",
         },
@@ -703,7 +703,7 @@ multnomah_arrest_john_common_pdf_fields = {
             "(Case Number)": "200000",
             "(DA number)": "01234567",
             "(Case Name)": "COMMON NAME",
-            None: None,
+            "(Full Name)": "John FullName Common",
             "(Date of Birth)": "11/22/1999",
             "(Mailing Address)": "12345 NE Test Suite Drive #123",
             "(Phone Number)": "555-555-1234",
@@ -713,6 +713,7 @@ multnomah_arrest_john_common_pdf_fields = {
             "(Arresting Agency)": "",
             "(Dismissed Arrest Dates)": "Oct 22, 2019",
             "(Dismissed Charges)": "Obstruction Of Search Warrant",
+            "(I Full Name)": "John FullName Common",
         }
     },
     "document_1": {
@@ -720,7 +721,7 @@ multnomah_arrest_john_common_pdf_fields = {
             "(Case Number)": "110000",
             "(DA number)": "01234567",
             "(Case Name)": "COMMON NAME",
-            None: None,
+            "(Full Name)": "John FullName Common",
             "(Date of Birth)": "11/22/1999",
             "(Mailing Address)": "12345 NE Test Suite Drive #123",
             "(Phone Number)": "555-555-1234",
@@ -730,6 +731,7 @@ multnomah_arrest_john_common_pdf_fields = {
             "(Arresting Agency)": "",
             "(Dismissed Arrest Dates)": "",
             "(Dismissed Charges)": "",
+            "(I Full Name)": "John FullName Common",
         }
     },
     "document_2": {
@@ -737,7 +739,7 @@ multnomah_arrest_john_common_pdf_fields = {
             "(Case Number)": "120000",
             "(DA number)": "01234567",
             "(Case Name)": "COMMON A NAME",
-            None: None,
+            "(Full Name)": "John FullName Common",
             "(Date of Birth)": "11/22/1999",
             "(Mailing Address)": "12345 NE Test Suite Drive #123",
             "(Phone Number)": "555-555-1234",
@@ -747,6 +749,7 @@ multnomah_arrest_john_common_pdf_fields = {
             "(Arresting Agency)": "",
             "(Dismissed Arrest Dates)": "",
             "(Dismissed Charges)": "",
+            "(I Full Name)": "John FullName Common",
         }
     },
     "document_3": {
@@ -768,7 +771,7 @@ multnomah_conviction_john_common_pdf_fields = {
             "(Case Number)": "200000",
             "(DA Number)": "01234567",
             "(Case Name)": "COMMON NAME",
-            None: None,
+            "(Full Name)": "John FullName Common",
             "(Date of Birth)": "11/22/1999",
             "(Mailing Address)": "12345 NE Test Suite Drive #123",
             "(Phone Number)": "555-555-1234",
@@ -779,6 +782,7 @@ multnomah_conviction_john_common_pdf_fields = {
             "(Arrest Dates All)": "Oct 22, 2019",
             "(Conviction Dates)": "",
             "(Conviction Charges)": "",
+            "(I Full Name)": "John FullName Common",
         }
     },
     "document_1": {
@@ -786,7 +790,7 @@ multnomah_conviction_john_common_pdf_fields = {
             "(Case Number)": "110000",
             "(DA Number)": "01234567",
             "(Case Name)": "COMMON NAME",
-            None: None,
+            "(Full Name)": "John FullName Common",
             "(Date of Birth)": "11/22/1999",
             "(Mailing Address)": "12345 NE Test Suite Drive #123",
             "(Phone Number)": "555-555-1234",
@@ -797,6 +801,7 @@ multnomah_conviction_john_common_pdf_fields = {
             "(Arrest Dates All)": "Jul 8, 2015",
             "(Conviction Dates)": "Aug 8, 2015",
             "(Conviction Charges)": "Theft In The Second Degree",
+            "(I Full Name)": "John FullName Common",
         }
     },
     "document_2": {
@@ -804,7 +809,7 @@ multnomah_conviction_john_common_pdf_fields = {
             "(Case Number)": "120000",
             "(DA Number)": "01234567",
             "(Case Name)": "COMMON A NAME",
-            None: None,
+            "(Full Name)": "John FullName Common",
             "(Date of Birth)": "11/22/1999",
             "(Mailing Address)": "12345 NE Test Suite Drive #123",
             "(Phone Number)": "555-555-1234",
@@ -815,6 +820,7 @@ multnomah_conviction_john_common_pdf_fields = {
             "(Arrest Dates All)": "Jul 8, 2014",
             "(Conviction Dates)": "Aug 8, 2014",
             "(Conviction Charges)": "Poss Under Oz Marijuana",
+            "(I Full Name)": "John FullName Common",
         }
     },
     "document_3": {

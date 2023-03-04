@@ -406,6 +406,7 @@ class TestOregonWithConvictionOrderPDF:
         "(Charges All)": "",
         "(Conviction Dates)": "",
         "(Conviction Charges)": "",
+        "(Arresting Agency1)": ""
     }
     form_data = {
         "sid": "new sid",
@@ -462,6 +463,7 @@ class TestOregonWithArrestOrderPDF(TestOregonWithConvictionOrderPDF):
         "(Dismissed Arrest Dates)": "",
         "(Dismissed Charges)": "",
         "(Dismissed Dates)": "",
+        "(Arresting Agency1)": ""
     }
     form_data = {
         "sid": "new sid",
