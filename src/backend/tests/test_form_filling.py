@@ -398,6 +398,7 @@ class TestOregonPDF:
 
 class TestOregonWithConvictionOrderPDF:
     filename = "oregon_with_conviction_order"
+    other_field_names = TestOregonPDF.get_all_field_names()
     form_speficic_fields = {
         "(County)": "",
         "(Case Number)": "",
@@ -432,11 +433,10 @@ class TestOregonWithConvictionOrderPDF:
         "(Conviction Dates)": "old conviction_dates",
         "(Conviction Charges)": "old conviction_charges",
     }
-    other_field_names = TestOregonPDF.get_all_field_names()
 
     @pytest.fixture
     def pdf(self) -> PDF:
-        return PDF(self.filename, {"assert_blank_pdf": True})
+        return PDF(self.filename, self.form_data, {"assert_blank_pdf": True})
 
     @pytest.fixture
     def all_field_names(self):
@@ -445,12 +445,10 @@ class TestOregonWithConvictionOrderPDF:
 
     def test_all_fields_are_accounted_for(self, pdf: PDF, all_field_names: set):
         assert set(pdf.get_field_dict().keys()) == all_field_names
-
-        all_field_names.discard("(Arresting Agency)")
         assert set(anot.T for anot in pdf.annotations if anot.T) == all_field_names
  
     def test_both_old_and_new_fields_are_updated(self, pdf: PDF):
-        pdf.update_annotations(self.form_data)
+        pdf.update_annotations()
         assert_pdf_values(pdf, self.expected_pdf_fields)
 
 
@@ -490,15 +488,142 @@ class TestOregonWithArrestOrderPDF(TestOregonWithConvictionOrderPDF):
     }
 
 
-# class TestMultnomahWithArrestPDF(TestOregonWithConvictionOrderPDF):
-#     filename = "multnomah_arrest"
-#     definition = "multnomah"
-#     form_speficic_fields = {
-#         "(Case Number)": "",
-#     }
-#     form_data = {
-#     }
-#     expected_pdf_fields = {
-#     }
+class TestMultnomahWithArrestPDF(TestOregonWithConvictionOrderPDF):
+    filename = "multnomah_arrest"
+    other_field_names = set()
+    form_speficic_fields = {
+        "(Case Name)": "",
+        "(Case Number)": "",
+        "(DA Number)": "",
+        "(Full Name)": "",
+        "(Date of Birth)": "",
+        "(Mailing Address)": "",
+        "(Phone Number)": "",
+        "(City)": "",
+        "(State)": "",
+        "(Zip Code)": "",
+        "(Arresting Agency)": "",
+        "(Dismissed Arrest Dates)": "",
+        "(Dismissed Charges)": "",
+        "(I Full Name)": "",
+    }
+    form_data = {
+        "case_name": "old case_name",
+        "case_number": "old case_number",
+        "da_number": "old da_number",
+        "full_name": "old full_name",
+        "date_of_birth": "old date_of_birth",
+        "mailing_address": "old mailing_address",
+        "phone_number": "old phone_number",
+        "city": "old city",
+        "state": "old state",
+        "zip_code": "old zip_code",
+        "arresting_agency": "old arresting_agency",
+        "dismissed_arrest_dates": "old dismissed_arrest_dates",
+        "dismissed_charges": "old dismissed_charges",
+        "i_full_name": "old full_name"
+    }
+    expected_pdf_fields = {
+        "(Case Name)": "old case_name",
+        "(Case Number)": "old case_number",
+        "(DA Number)": "old da_number",
+        "(Full Name)": "old full_name",
+        "(Date of Birth)": "old date_of_birth",
+        "(Mailing Address)": "old mailing_address",
+        "(Phone Number)": "old phone_number",
+        "(City)": "old city",
+        "(State)": "old state",
+        "(Zip Code)": "old zip_code",
+        "(Arresting Agency)": "old arresting_agency",
+        "(Dismissed Arrest Dates)": "old dismissed_arrest_dates",
+        "(Dismissed Charges)": "old dismissed_charges",
+        "(I Full Name)": "old full_name",
+    }
+
+
+class TestMultnomahWithConvictionPDF(TestOregonWithConvictionOrderPDF):
+    filename = "multnomah_conviction"
+    other_field_names = set()
+    form_speficic_fields = {
+        "(Case Name)": "",
+        "(Case Number)": "",
+        "(DA Number)": "",
+        "(Full Name)": "",
+        "(Date of Birth)": "",
+        "(Mailing Address)": "",
+        "(Phone Number)": "",
+        "(City)": "",
+        "(State)": "",
+        "(Zip Code)": "",
+        "(Arresting Agency)": "",
+        "(Arrest Dates All)": "",
+        "(Conviction Dates)": "",
+        "(Conviction Charges)": "",
+        "(I Full Name)": "",
+    }
+    form_data = {
+        "case_name": "old case_name",
+        "case_number": "old case_number",
+        "da_number": "old da_number",
+        "full_name": "old full_name",
+        "date_of_birth": "old date_of_birth",
+        "mailing_address": "old mailing_address",
+        "phone_number": "old phone_number",
+        "city": "old city",
+        "state": "old state",
+        "zip_code": "old zip_code",
+        "arresting_agency": "old arresting_agency",
+        "arrest_dates_all": "old arrest_dates_all",
+        "conviction_dates": "old conviction_dates",
+        "conviction_charges": "old conviction_charges",
+    }
+    expected_pdf_fields = {
+        "(Case Name)": "old case_name",
+        "(Case Number)": "old case_number",
+        "(DA Number)": "old da_number",
+        "(Full Name)": "old full_name",
+        "(Date of Birth)": "old date_of_birth",
+        "(Mailing Address)": "old mailing_address",
+        "(Phone Number)": "old phone_number",
+        "(City)": "old city",
+        "(State)": "old state",
+        "(Zip Code)": "old zip_code",
+        "(Arresting Agency)": "old arresting_agency",
+        "(Arrest Dates All)": "old arrest_dates_all",
+        "(Conviction Dates)": "old conviction_dates",
+        "(Conviction Charges)": "old conviction_charges",
+        "(I Full Name)": "old full_name",
+    }
   
 
+class TestOSPPDF(TestOregonWithConvictionOrderPDF):
+    filename = "OSP_FORM"
+    other_field_names = set()
+    form_speficic_fields = {
+        "(Full Name)": "",
+        "(Date of Birth)": "",
+        "(Mailing Address)": "",
+        "(Phone Number)": "",
+        "(City)": "",
+        "(State)": "",
+        "(Zip Code)": "",
+    }
+    form_data = {
+        "full_name": "old full_name",
+        "date_of_birth": "old date_of_birth",
+        "mailing_address": "old mailing_address",
+        "phone_number": "old phone_number",
+        "city": "old city",
+        "state": "old state",
+        "zip_code": "old zip_code",
+    }
+    expected_pdf_fields = {
+        "(Full Name)": "old full_name",
+        "(Date of Birth)": "old date_of_birth",
+        "(Mailing Address)": "old mailing_address",
+        "(Phone Number)": "old phone_number",
+        "(City)": "old city",
+        "(State)": "old state",
+        "(Zip Code)": "old zip_code",
+    }
+  

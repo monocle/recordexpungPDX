@@ -7,7 +7,6 @@ from typing import List, Dict, Tuple, Optional, Union
 from zipfile import ZipFile
 from collections import UserDict
 
-from dacite import from_dict
 from expungeservice.models.case import Case
 from expungeservice.models.charge import Charge, EditStatus
 from expungeservice.models.charge_types.contempt_of_court import ContemptOfCourt
@@ -22,61 +21,6 @@ from expungeservice.models.record_summary import RecordSummary
 from expungeservice.pdf.markdown_to_pdf import MarkdownToPDF
 
 from pdfrw import PdfReader, PdfWriter, PdfDict, PdfObject, PdfName, PdfString
-
-
-@dataclass
-class FormData:
-    county: str
-    case_number: str
-    case_name: str
-    da_number: str
-    sid: str
-
-    has_conviction: bool
-    has_no_complaint: bool
-    has_dismissed: bool
-    has_contempt_of_court: bool
-    conviction_dates: str
-
-    has_class_b_felony: bool
-    has_class_c_felony: bool
-    has_class_a_misdemeanor: bool
-    has_class_bc_misdemeanor: bool
-    has_violation_or_contempt_of_court: bool
-    has_probation_revoked: bool
-
-    dismissed_arrest_dates: str
-    arresting_agency: str
-
-    date_of_birth: str
-    full_name: str
-    mailing_address: str
-    phone_number: str
-    city: str
-    state: str
-    zip_code: str
-
-    da_address: str
-
-
-@dataclass
-class FormDataWithOrder(FormData):
-    arrest_dates_all: str
-    charges_all: str
-    conviction_charges: str
-    dismissed_charges: str
-    dismissed_dates: str
-
-
-@dataclass
-class CertificateFormData:
-    full_name: str
-    date_of_birth: str
-    phone_number: str
-    mailing_address: str
-    city: str
-    state: str
-    zip_code: str
 
 
 class FormFilling:
@@ -106,9 +50,13 @@ class FormFilling:
                 writer.write(file_path, trailer=trailer)
                 zipfile.write(file_path, file_name)
 
-        # TODO: Extract to method
-        pdf = FormFilling._build_certificate_of_mailing_pdf(user_information)
+        # Add OSP form
         file_name = f"OSP_Form.pdf"
+        pdf_path = path.join(Path(__file__).parent, "files", file_name)
+        pdf = PDF(pdf_path, user_information, {"full_path": True})
+        pdf.update_annotations()
+        pdf = pdf._pdf
+
         file_path = path.join(temp_dir, file_name)
         writer = PdfWriter()
         writer.addpages(pdf.pages)
@@ -128,23 +76,6 @@ class FormFilling:
             if case.summary.sid:
                 return case.summary.sid
         return ""
-
-    @staticmethod
-    def _build_certificate_of_mailing_pdf(user_information: Dict[str, str]) -> PdfReader:
-        form = from_dict(data_class=CertificateFormData, data=user_information)
-        pdf_path = path.join(Path(__file__).parent, "files", f"OSP_Form.pdf")
-        pdf = PdfReader(pdf_path)
-        for field in pdf.Root.AcroForm.Fields:
-            field_name = field.T.lower().replace(" ", "_").replace("(", "").replace(")", "")
-            field_value = getattr(form, field_name)
-            field.V = field_value
-        for page in pdf.pages:
-            annotations = page.get("/Annots")
-            if annotations:
-                for annotation in annotations:
-                    annotation.update(PdfDict(AP=""))
-        pdf.Root.AcroForm.update(PdfDict(NeedAppearances=PdfObject("true")))
-        return pdf
 
     @staticmethod
     def _add_warnings(writer: PdfWriter, warnings: List[str]):
@@ -264,28 +195,11 @@ class FormFilling:
         file_name = os.path.basename(base_file_name)
         pdf = PdfReader(pdf_path)
 
-        if "oregon" in pdf_path:
-            new_pdf = PDF(pdf_path, {"full_path": True})
-            new_pdf.update_annotations(form_data_dict)
-            warnings = new_pdf.warnings
-            pdf = new_pdf._pdf
-        else:
-            for field in pdf.Root.AcroForm.Fields:
-                form = from_dict(data_class=FormDataWithOrder, data=form_data_dict)
-                field_name = field.T.lower().replace(" ", "_").replace("(", "").replace(")", "")
-                field_value = getattr(form, field_name)
-                field.V = field_value
-                warnings += FormFilling._set_font(field, field.V)
+        new_pdf = PDF(pdf_path, form_data_dict, {"full_path": True})
+        new_pdf.update_annotations()
+        warnings = new_pdf.warnings
+        pdf = new_pdf._pdf
 
-            # Since we are setting the values of the AcroForm.Fields, we need to
-            # remove the Appearance Dictionary ("/AP") of the PDF annotations in
-            # order for the value to appear in the PDF.
-            for page in pdf.pages:
-                annotations = page.get("/Annots")
-                if annotations:
-                    for annotation in annotations:
-                        annotation.update(PdfDict(AP=""))
-            pdf.Root.AcroForm.update(PdfDict(NeedAppearances=PdfObject("true")))
         return pdf, file_name, warnings
 
     @staticmethod
@@ -403,7 +317,7 @@ class FormFilling:
 # Note: when printing pdfrw objects to screen during debugginp, not all attributes are displayed. Stream objects
 # can have many more nested properties.
 class AcroFormMapper(UserDict):
-    def __init__(self, form_data: Dict[str, str] = None, definition="oregon_2_2023"):
+    def __init__(self, form_data: Dict[str, str] = None, definition="oregon"):
         super().__init__()
 
         self.form_data = form_data or {}
@@ -434,7 +348,11 @@ class AcroFormMapper(UserDict):
     # 2. Click on "Prepare Form". This will add all of the form's fields and
     #    make them available via Root.AcroForm.Fields in the PDF encoding.
     # 3. Adjust any fields as necessary, ex. move "(Address)" up to the
-    #    correct line.
+    #    correct line. Sometimes a AcroForm.Field is created, but no annotation
+    #    is assocated with it, ex "undefined" field that has no label. In this
+    #    case, delete the filed and create a new text field via the 
+    #    "Add a new text field" button. Also, if there are fields with the same
+    #    names, then they wont' get annotations and would need to be renamed.
     # 4. Save this as a new PDF.
     # 5. Add to expungeservice/files/ folder.
     #
@@ -442,7 +360,7 @@ class AcroFormMapper(UserDict):
     # to `form_data_dict` keys used for other forms.
     # The order is what comes out of Root.AcroForm.Fields.
     # Commented fields are those we are not filling in.
-    oregon_2_2023 = {
+    oregon = {
         "(FOR THE COUNTY OF)": "county",
         "(Plaintiff)": lambda _: "State of Oregon",
         "(Case No)": "case_number",
@@ -505,6 +423,7 @@ class AcroFormMapper(UserDict):
         # "(Date_2)"
         # "(Signature_2)"
         "(Name typed or printed_2)": "full_name",
+
         # The following fields are additional fields from oregon_with_conviction_order.pdf.
         "(County)": "county",
         "(Case Number)": "case_number",
@@ -514,10 +433,32 @@ class AcroFormMapper(UserDict):
         # "(Arresting Agency)": "arresting_agency",
         "(Conviction Dates)": "conviction_dates",
         "(Conviction Charges)": "conviction_charges",
+
         # The following fields are additional fields from oregon_with_arrest_order.pdf.
         "(Dismissed Arrest Dates)": "dismissed_arrest_dates",
         "(Dismissed Charges)": "dismissed_charges",
         "(Dismissed Dates)": "dismissed_dates",
+    }
+    # Multnomah and OSP
+    other = {
+        "(Case Name)": "case_name",
+        "(Case Number)": "case_number",
+        "(DA Number)": "da_number",
+        "(Full Name)": "full_name",
+        "(Date of Birth)": "date_of_birth",
+        "(Mailing Address)": "mailing_address",
+        "(Phone Number)": "phone_number",
+        "(City)": "city",
+        "(State)": "state",
+        "(Zip Code)": "zip_code",
+        "(Arresting Agency)": "arresting_agency",
+        "(Dismissed Arrest Dates)": "dismissed_arrest_dates",
+        "(Dismissed Charges)": "dismissed_charges",
+        "(I Full Name)": lambda form: form.get("full_name"),
+
+        "(Arrest Dates All)": "arrest_dates_all",
+        "(Conviction Dates)": "conviction_dates",
+        "(Conviction Charges)": "conviction_charges",
     }
 
 
@@ -529,16 +470,20 @@ class PDF:
     FONT_SIZE_SMALL = "6"
     BASE_DIR = path.join(Path(__file__).parent, "files")
 
-    def __init__(self, base_filename: str, opts=None):
+    def __init__(self, base_filename: str, form_data: Dict[str, str] = None,  opts=None):
         default_opts = {"full_path": False, "assert_blank_pdf": False, "field_width_factors": {"(Date of arrest)": 3}}
         full_opts = {**default_opts, **(opts or {})}
-
         full_path = base_filename if full_opts.get("full_path") else self.get_filepath(base_filename)
+
         self._pdf = PdfReader(full_path)
         self.warnings: List[str] = []
         self.annotations = [annot for page in self._pdf.pages for annot in page.Annots or []]
         self.fields = {field.T: field for field in self._pdf.Root.AcroForm.Fields}
         self.field_width_factors = full_opts.get("field_width_factors")
+        self.form_data = form_data or {}
+
+        definition = "oregon" if "oregon" in full_path else "other"
+        self.mapper = AcroFormMapper(self.form_data, definition)
 
         if full_opts.get("assert_blank_pdf"):
             self._assert_blank_pdf()
@@ -579,11 +524,12 @@ class PDF:
 
         annotation.DA = PdfString.encode(f"/{self.FONT_FAMILY} {font_size} Tf 0 g")
 
-    def update_annotations(self, form_data: Dict[str, str] = None, definition="oregon_2_2023") -> AcroFormMapper:
-        mapper = AcroFormMapper(form_data, definition)
+    def update_annotations(self, form_data: Dict[str, str] = None, definition="oregon") -> AcroFormMapper:
+        if form_data:
+            self.mapper = AcroFormMapper(form_data, definition)
 
         for annotation in self.annotations:
-            new_value = mapper.get(annotation.T)
+            new_value = self.mapper.get(annotation.T)
 
             if annotation.FT == self.BUTTON_TYPE and new_value:
                 self.set_checkbox_on(annotation)
@@ -594,7 +540,7 @@ class PDF:
                 self.set_font(annotation)
 
         self._pdf.Root.AcroForm.update(PdfDict(NeedAppearances=PdfObject("true")))
-        return mapper
+        return self.mapper
 
     def write(self, base_filename: str):
         writer = PdfWriter()
