@@ -24,6 +24,13 @@ from pdfrw import PdfReader, PdfWriter, PdfDict, PdfObject, PdfName, PdfString
 
 
 class FormFilling:
+    OREGON_ARREST_PDF_NAME = "oregon_with_arrest_order.pdf"
+    OREGON_CONVICTION_PDF_NAME = "oregon_with_conviction_order.pdf"
+    MULTNOMAH_ARREST_PDF_NAME = "multnomah_arrest.pdf"
+    MULTNOMAH_CONVICTION_PDF_NAME = "multnomah_conviction.pdf"
+    OSP_PDF_NAME = "OSP_Form.pdf"
+    DEFAULT_PDF_NAME = "oregon.pdf"
+
     @staticmethod
     def build_zip(record_summary: RecordSummary, user_information: Dict[str, str]) -> Tuple[str, str]:
         temp_dir = mkdtemp()
@@ -51,19 +58,18 @@ class FormFilling:
                 zipfile.write(file_path, file_name)
 
         # Add OSP form
-        file_name = f"OSP_Form.pdf"
-        pdf_path = path.join(Path(__file__).parent, "files", file_name)
-        pdf = PDF(pdf_path, user_information, {"full_path": True})
+        osp_path = path.join(Path(__file__).parent, "files", FormFilling.OSP_PDF_NAME)
+        pdf = PDF(osp_path, user_information, {"full_path": True})
         pdf.update_annotations()
         pdf = pdf._pdf
 
-        file_path = path.join(temp_dir, file_name)
+        file_path = path.join(temp_dir, FormFilling.OSP_PDF_NAME)
         writer = PdfWriter()
         writer.addpages(pdf.pages)
         trailer = writer.trailer
         trailer.Root.AcroForm = pdf.Root.AcroForm
         writer.write(file_path, trailer=trailer)
-        zipfile.write(file_path, file_name)
+        zipfile.write(file_path, FormFilling.OSP_PDF_NAME)
         zipfile.close()
         return zip_path, zip_name
 
@@ -98,7 +104,7 @@ class FormFilling:
             f"{case.summary.case_number} (charge {in_part} only)" if ineligible_charges else case.summary.case_number
         )
         if eligible_charges and case.summary.balance_due_in_cents == 0:
-            pdf, file_name, warnings = FormFilling._build_pdf_for_eligible_case(
+            file_name, pdf, warnings  = FormFilling._build_pdf_for_eligible_case(
                 case, eligible_charges, user_information, case_number_with_comments, sid
             )
             if ineligible_charges:
@@ -119,7 +125,6 @@ class FormFilling:
         case_number_with_comments: str,
         sid: str,
     ) -> Tuple[PdfReader, str, List[str]]:
-        warnings: List[str] = []
         charges = case.charges
         charge_names = [charge.name.title() for charge in charges]
         arrest_dates_all = list(set([charge.date.strftime("%b %-d, %Y") for charge in charges]))
@@ -189,49 +194,9 @@ class FormFilling:
             "dismissed_charges": "; ".join(dismissed_names),
             "dismissed_dates": "; ".join(dismissed_dates),
         }
-        location = case.summary.location.lower()
-        pdf_path = FormFilling._build_pdf_path(location, convictions)
-        base_file_name = FormFilling._build_base_file_name(location, convictions)
-        file_name = os.path.basename(base_file_name)
-        pdf = PdfReader(pdf_path)
-
-        new_pdf = PDF(pdf_path, form_data_dict, {"full_path": True})
-        new_pdf.update_annotations()
-        warnings = new_pdf.warnings
-        pdf = new_pdf._pdf
-
-        return pdf, file_name, warnings
-
-    @staticmethod
-    def _set_font(field: PdfDict, field_value: str) -> List[str]:
-        warnings: List[str] = []
-        if field["/Kids"]:
-            for kid in field["/Kids"]:
-                FormFilling._set_font_for_field(field, field_value, kid, warnings)
-        else:
-            FormFilling._set_font_for_field(field, field_value, field, warnings)
-        return warnings
-
-    @staticmethod
-    def _set_font_for_field(field, field_value, kid, warnings):
-        font_string, needs_shrink = FormFilling._build_font_string(kid, field_value)
-        kid.DA = font_string
-        if needs_shrink:
-            message = f'The font size of "{field.V}" was shrunk to fit the bounding box of "{field.T}". An addendum might be required if it still doesn\'t fit.'
-            warnings.append(message)
-
-    @staticmethod
-    def _build_font_string(field: PdfDict, field_value: str) -> Tuple[str, bool]:
-        max_length = FormFilling._compute_field_max_length(field)
-        needs_shrink = len(field_value) > max_length
-        font_size = 6 if needs_shrink else 10
-        return f"/TimesNewRoman  {font_size} Tf 0 g", needs_shrink
-
-    @staticmethod
-    def _compute_field_max_length(field: PdfDict) -> int:
-        CHARACTER_WIDTH = 0.3125  # Times New Roman size 10
-        width = float(field.Rect[2]) - float(field.Rect[0])
-        return int(width * CHARACTER_WIDTH)
+        pdf_path = FormFilling._build_pdf_path(case, convictions)
+        file_name = FormFilling._build_base_file_name(case, convictions)
+        return (file_name, *PDF.fill_form_values(pdf_path, form_data_dict))
 
     @staticmethod
     def _build_da_address(location: str) -> str:
@@ -277,31 +242,37 @@ class FormFilling:
         return ADDRESSES.get(cleaned_location, "")
 
     @staticmethod
-    def _build_pdf_path(location: str, convictions: List[Charge]) -> str:
+    def _build_pdf_path(case: Case, convictions: List[Charge] = None) -> str:
+        location = case.summary.location.lower()
+        file_name = "oregon.pdf"
+
         # Douglas and Umatilla counties explicitly want the "Order" part of the old forms too.
         if location in ["douglas", "umatilla"]:
             if convictions:
-                return path.join(Path(__file__).parent, "files", "oregon_with_conviction_order.pdf")
+                file_name = FormFilling.OREGON_CONVICTION_PDF_NAME
             else:
-                return path.join(Path(__file__).parent, "files", "oregon_with_arrest_order.pdf")
+                file_name = FormFilling.OREGON_ARREST_PDF_NAME
         elif location == "multnomah":
             if convictions:
-                return path.join(Path(__file__).parent, "files", "multnomah_conviction.pdf")
+                file_name = FormFilling.MULTNOMAH_CONVICTION_PDF_NAME
             else:
-                return path.join(Path(__file__).parent, "files", "multnomah_arrest.pdf")
-        else:
-            return path.join(Path(__file__).parent, "files", "oregon.pdf")
+                file_name = FormFilling.MULTNOMAH_ARREST_PDF_NAME
+
+        return path.join(Path(__file__).parent, "files", file_name)
 
     @staticmethod
-    def _build_base_file_name(location: str, convictions: List[Charge]) -> str:
+    def _build_base_file_name(case: Case, convictions: List[Charge]) -> str:
+        location = case.summary.location.lower()
+
         # Douglas and Umatilla counties explicitly want the "Order" part of the old forms too.
         if location in ["douglas", "umatilla"]:
             if convictions:
-                return path.join(Path(__file__).parent, "files", f"{location}_with_conviction_order.pdf")
+                return location + "_with_conviction_order.pdf"
             else:
-                return path.join(Path(__file__).parent, "files", f"{location}_with_arrest_order.pdf")
+                return location + "_with_arrest_order.pdf"
         else:
-            return path.join(Path(__file__).parent, "files", f"{location}.pdf")
+            return location + ".pdf"
+        
 
 
 # https://westhealth.github.io/exploring-fillable-forms-with-pdfrw.html
@@ -469,6 +440,12 @@ class PDF:
     FONT_SIZE = "10"
     FONT_SIZE_SMALL = "6"
     BASE_DIR = path.join(Path(__file__).parent, "files")
+
+    @staticmethod
+    def fill_form_values(pdf_path: str, form_data: Dict[str, str]):
+        pdf = PDF(pdf_path, form_data, {"full_path": True})
+        pdf.update_annotations()
+        return pdf._pdf, pdf.warnings     
 
     def __init__(self, base_filename: str, form_data: Dict[str, str] = None,  opts=None):
         default_opts = {"full_path": False, "assert_blank_pdf": False, "field_width_factors": {"(Date of arrest)": 3}}

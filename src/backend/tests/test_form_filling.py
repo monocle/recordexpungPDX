@@ -7,7 +7,7 @@ from pathlib import Path
 import pickle
 
 import pytest
-from unittest.mock import patch
+from unittest.mock import patch, Mock
 
 from expungeservice.expunger import Expunger
 from expungeservice.form_filling import FormFilling, PDF, AcroFormMapper as AFM
@@ -111,6 +111,52 @@ class TestJohnCommonMultnomahConvictionIntegration(TestJohnCommonIntegration):
     expected_form_values = multnomah_conviction_john_common_pdf_fields
 
 
+#########################################
+
+
+class TestFormFilling:
+    dir_path = os.path.join(Path(__file__).parent.parent, "expungeservice", "files")
+
+    def assert_correct_pdf_path(self, county: str, expected_file_name: str, has_convictions: bool):
+        charges = [Mock()] if has_convictions else []
+        mock_case = Mock()
+
+        with patch.object(mock_case.summary, "location", new=county):
+            full_path = FormFilling._build_pdf_path(mock_case, charges)
+            assert full_path == os.path.join(self.dir_path, expected_file_name)
+
+    def assert_correct_file_path(self, county: str, expected_file_name: str, has_convictions: bool):
+        charges = [Mock()] if has_convictions else []
+        mock_case = Mock()
+
+        with patch.object(mock_case.summary, "location", new=county):
+            file_name = FormFilling._build_base_file_name(mock_case, charges)
+            assert file_name == expected_file_name
+
+    def test_correct_pdf_path_is_built(self):
+        self.assert_correct_pdf_path("Douglas", FormFilling.OREGON_ARREST_PDF_NAME, has_convictions=False)
+        self.assert_correct_pdf_path("Douglas", FormFilling.OREGON_CONVICTION_PDF_NAME, has_convictions=True)
+        
+        self.assert_correct_pdf_path("Umatilla", FormFilling.OREGON_ARREST_PDF_NAME, has_convictions=False)
+        self.assert_correct_pdf_path("Umatilla", FormFilling.OREGON_CONVICTION_PDF_NAME, has_convictions=True)
+
+        self.assert_correct_pdf_path("Multnomah", FormFilling.MULTNOMAH_ARREST_PDF_NAME, has_convictions=False)
+        self.assert_correct_pdf_path("Multnomah", FormFilling.MULTNOMAH_CONVICTION_PDF_NAME, has_convictions=True)
+
+        self.assert_correct_pdf_path("unknown", FormFilling.DEFAULT_PDF_NAME, has_convictions=False)
+        self.assert_correct_pdf_path("unknown", FormFilling.DEFAULT_PDF_NAME, has_convictions=True)
+
+    def test_correct_base_file_name_is_built(self):
+        self.assert_correct_file_path("Douglas", "douglas_with_arrest_order.pdf", has_convictions=False)
+        self.assert_correct_file_path("Douglas", "douglas_with_conviction_order.pdf", has_convictions=True)
+
+        self.assert_correct_file_path("Umatilla", "umatilla_with_arrest_order.pdf", has_convictions=False)
+        self.assert_correct_file_path("Umatilla", "umatilla_with_conviction_order.pdf", has_convictions=True)
+
+        self.assert_correct_file_path("Other", "other.pdf", has_convictions=False)
+        self.assert_correct_file_path("Other", "other.pdf", has_convictions=True)
+
+   
 #########################################
 
 
