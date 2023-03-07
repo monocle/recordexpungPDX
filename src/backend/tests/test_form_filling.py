@@ -67,13 +67,13 @@ class TestJohnCommonIntegration:
     BASE_DIR = os.path.join(Path(__file__).parent.parent, "expungeservice", "files")
     expected_form_values = oregon_john_common_pdf_fields
 
-    @patch("expungeservice.form_filling.FormFilling._get_pdf_path")
+    @patch("expungeservice.form_filling.FormFilling._get_file_name_for_case")
     @patch("expungeservice.form_filling.PdfWriter", autospec=True)
     @patch("expungeservice.form_filling.ZipFile")
     @patch("expungeservice.form_filling.mkdtemp")
-    def test_form_fields_are_filled(self, mock_mkdtemp, MockZipFile, MockPdfWriter, mock_get_pdf_name):
+    def test_form_fields_are_filled(self, mock_mkdtemp, MockZipFile, MockPdfWriter, mock_get_file_name_for_case):
         mock_mkdtemp.return_value = "foo"
-        mock_get_pdf_name.return_value = os.path.join(self.BASE_DIR, self.filename)
+        mock_get_file_name_for_case.return_value = self.filename
 
         user_information = {
             "full_name": "John FullName Common",

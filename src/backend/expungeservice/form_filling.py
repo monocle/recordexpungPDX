@@ -2,7 +2,7 @@ from dataclasses import dataclass, replace, asdict
 from os import path
 from pathlib import Path
 from tempfile import mkdtemp
-from typing import List, Dict, Tuple, Union
+from typing import List, Dict, Tuple, Union, Callable
 from zipfile import ZipFile
 from collections import UserDict
 
@@ -69,18 +69,38 @@ class Charges:
 
     @property
     def names(self) -> List[str]:
+        """
+        Returns the names of the charges in title case.
+        """
         return [charge.name.title() for charge in self._charges]
 
     def dates(self, is_disposition=False) -> List[DateWithFuture]:
+        """
+        Collects the dates of the charges.
+
+        :param bool is_disposition: Whether to use the charge.displosition.date.
+            If false, the charge.date wil be returned.
+        """
         dates = [charge.disposition.date if is_disposition else charge.date for charge in self._charges]
         dates.sort()
         return list(dict.fromkeys(dates))
 
     @property
     def empty(self) -> bool:
+        """
+        Returns whether there are no charges or there are.
+        """
         return len(self._charges) == 0
 
     def has_any(self, type) -> bool:
+        """
+        Check whether there are any charges with a certain attribute.
+
+        :param Any type: Can be the following:
+            * string: a charge_type.severity_level, ex. "Felony Class C"
+            * class: a charge_type class, ex. FelonyClassC
+            * list: a list of string and/or classes
+        """
         if isinstance(type, str):
             return any([charge.charge_type.severity_level == type for charge in self._charges])
         elif isinstance(type, list):
@@ -88,7 +108,13 @@ class Charges:
         else:
             return any([isinstance(charge.charge_type, type) for charge in self._charges])
 
-    def has_any_with_getter(self, getter) -> bool:
+    def has_any_with_getter(self, getter: Callable) -> bool:
+        """
+        Check whether there are any charges with a certain attribute.
+
+        :param function getter: A function that will be passed a charge instance. It's return
+            value will be used in the `any` check.
+        """
         return any([getter(charge) for charge in self._charges])
 
 
@@ -110,6 +136,7 @@ class CaseResults(UserInfo):
     county: str
     case_name: str
     case_number: str
+    has_no_balance: bool
     da_number: str
     da_address: str = None
     case_number_with_comments: str = None
@@ -123,15 +150,17 @@ class CaseResults(UserInfo):
             "county": case.summary.location,
             "case_number": case.summary.case_number,
             "case_name": case.summary.name,
+            "has_no_balance": case.summary.balance_due_in_cents == 0,
             "da_number": case.summary.district_attorney_number,
         }
         return from_dict(data_class=CaseResults, data=data)
 
     def __post_init__(self):
-        eligible_charges, ineligible_charges = Case.partition_by_eligibility(self.case.charges)
+        filtered_charges = [c for c in self.case.charges if c.edit_status != EditStatus.DELETE]
+        eligible_charges, ineligible_charges = Case.partition_by_eligibility(filtered_charges)
         dismissed, convictions = Case.categorize_charges(eligible_charges)
 
-        self.charges = Charges(self.case.charges)
+        self.charges = Charges(filtered_charges)
         self.eligible_charges = Charges(eligible_charges)
         self.ineligible_charges = Charges(ineligible_charges)
         self.dismissed = Charges(dismissed)
@@ -143,13 +172,17 @@ class CaseResults(UserInfo):
         in_part = ", ".join(self.short_eligible_ids)
         self.case_number_with_comments = f"{self.case_number} (charge {in_part} only)" if self.has_ineligible_charges else self.case_number
 
+    ##### All charges #####
+
     @property
     def charge_names(self) -> List[str]:
         return self.charges.names
 
     @property
-    def arrest_dates_all(self) -> List[DateWithFuture]:
+    def arrest_dates(self) -> List[DateWithFuture]:
         return self.charges.dates()
+
+    ##### Eligible charges #####
 
     @property
     def short_eligible_ids(self) -> List[str]:
@@ -163,14 +196,17 @@ class CaseResults(UserInfo):
     def has_eligible_charges(self) -> bool:
         return not self.eligible_charges.empty
 
-    # TODO
-    # @property
-    # def is_expungealbe_now(self) -> bool:
-    #     return self.has_eligible_charges and self.has_no_balance
+    @property
+    def is_expungeable_now(self) -> bool:
+        return self.has_eligible_charges and self.has_no_balance
+
+    ##### Ineligible charges #####
 
     @property
     def has_ineligible_charges(self) -> bool:
         return not self.ineligible_charges.empty
+
+    ##### Dismissed charges #####
 
     @property
     def dismissed_names(self) -> List[str]:
@@ -191,6 +227,8 @@ class CaseResults(UserInfo):
     @property
     def has_dismissed(self) -> bool:
         return not self.dismissed.empty
+
+    ##### Convicted charges #####
 
     @property
     def conviction_names(self) -> bool:
@@ -229,9 +267,9 @@ class CaseResults(UserInfo):
         return self.convictions.has_any_with_getter(lambda charge: charge.probation_revoked)
 
 
-
-class PDF:
+class PdfFieldMapper:
     pass
+
 
 class FormFilling:
     OREGON_ARREST_PDF_NAME = "oregon_with_arrest_order.pdf"
@@ -242,12 +280,12 @@ class FormFilling:
     DEFAULT_PDF_NAME = "oregon.pdf"
     ZIP_FILE_NAME = "expungement_packet.zip"
     BASE_DIR = path.join(Path(__file__).parent, "files")
+    INELIGIBLE_WARNING = "This form will attempt to expunge a case in part. This is relatively rare, and thus these forms should be reviewed particularly carefully."
 
     @staticmethod
     def build_zip(record_summary: RecordSummary, user_information_dict: Dict[str, str]) -> Tuple[str, str]:
         temp_dir = mkdtemp()
         zip_dir = mkdtemp()
-        
         zip_path = path.join(zip_dir, FormFilling.ZIP_FILE_NAME)
         zipfile = ZipFile(zip_path, "w")
 
@@ -255,34 +293,23 @@ class FormFilling:
         user_info = from_dict(data_class=UserInfo, data=user_information_dict)
 
         for case in record_summary.record.cases:
-            # move this into CaseResults
-            case_without_deleted_charges = replace(
-                case, charges=tuple(c for c in case.charges if c.edit_status != EditStatus.DELETE)
-            )
-            case_results = CaseResults.build(case=case_without_deleted_charges, user_info=user_info, sid=sid)
+            case_results = CaseResults.build(case=case, user_info=user_info, sid=sid)
 
-            if case_results.has_eligible_charges and case.summary.balance_due_in_cents == 0:
-                pdf_path = FormFilling._get_pdf_path(case, case_results.convictions)
-                case_mapper = PdfFieldMapper(pdf_path, case_results)
-                pdf = PDF.fill_form(case_mapper)
+            if case_results.is_expungeable_now:
+                pdf = FormFilling._build_pdf(case_results)
+                file_name, file_path = FormFilling._build_download_file_path(temp_dir, case_results)
 
-                base_file_name = FormFilling._build_base_file_name(case_without_deleted_charges, case_results.convictions)
-                file_name = f"{case_without_deleted_charges.summary.name}_{case_without_deleted_charges.summary.case_number}_{base_file_name}"
-                file_path = path.join(temp_dir, file_name)
-           
-                pdf.write(file_path, lambda writer, warnings: FormFilling._add_warnings(writer, warnings))
+                pdf.write(file_path, lambda writer, warnings, mapper: FormFilling._add_warnings(writer, warnings, mapper))
                 zipfile.write(file_path, file_name)
 
         # Add OSP form
-        pdf_path = path.join(FormFilling.BASE_DIR, FormFilling.OSP_PDF_NAME)
-        osp_mapper = PdfFieldMapper(pdf_path, user_info)
-        pdf = PDF.fill_form(osp_mapper)
-
+        osp_pdf = FormFilling._build_pdf(user_info)
         zip_file_path = path.join(temp_dir, FormFilling.OSP_PDF_NAME)
-        pdf.write(zip_file_path)
 
+        osp_pdf.write(zip_file_path)
         zipfile.write(zip_file_path, FormFilling.OSP_PDF_NAME)
         zipfile.close()
+
         return zip_path, FormFilling.ZIP_FILE_NAME
 
     @staticmethod
@@ -297,7 +324,10 @@ class FormFilling:
 
     # TODO move to PDF
     @staticmethod
-    def _add_warnings(writer: PdfWriter, warnings: List[str]):
+    def _add_warnings(writer: PdfWriter, warnings: List[str], mapper: PdfFieldMapper):
+        if mapper.get("has_ineligible_charges"):
+            warnings.insert(0, FormFilling.INELIGIBLE_WARNING)
+
         if warnings:
             text = "# Warnings from RecordSponge  \n"
             text += "Do not submit this page to the District Attorney's office.  \n \n"
@@ -308,38 +338,51 @@ class FormFilling:
             writer.addpages(blank_pdf.pages)
 
     @staticmethod
-    def _get_pdf_path(case: Case, convictions: List[Charge] = None) -> str:
-        location = case.summary.location.lower()
-
+    def _build_download_file_path(dir: str, case_results: CaseResults) -> str:
+        county = case_results.county.lower()
         # Douglas and Umatilla counties explicitly want the "Order" part of the old forms too.
-        if location in ["douglas", "umatilla"]:
-            if convictions:
+        if county in ["douglas", "umatilla"]:
+            if case_results.has_conviction:
+                base_name = county + "_with_conviction_order.pdf"
+            else:
+                base_name = county + "_with_arrest_order.pdf"
+        else:
+            base_name = county + ".pdf"
+
+        file_name = f"{case_results.case_name}_{case_results.case_number}_{base_name}"
+        return file_name, path.join(dir, file_name)
+
+    @staticmethod
+    def _get_file_name_for_case(case_results: CaseResults):
+        # Douglas and Umatilla counties explicitly want the "Order" part of the old forms too.
+        if case_results.county in ["Douglas", "Umatilla"]:
+            if case_results.has_conviction:
                 file_name = FormFilling.OREGON_CONVICTION_PDF_NAME
             else:
                 file_name = FormFilling.OREGON_ARREST_PDF_NAME
-        elif location == "multnomah":
-            if convictions:
+        elif case_results.county == "Multnomah":
+            if case_results.has_conviction:
                 file_name = FormFilling.MULTNOMAH_CONVICTION_PDF_NAME
             else:
                 file_name = FormFilling.MULTNOMAH_ARREST_PDF_NAME
         else:
-            file_name = "oregon.pdf"
+            file_name = FormFilling.DEFAULT_PDF_NAME
+        
+        return file_name
 
-        return path.join(FormFilling.BASE_DIR, file_name)
 
     @staticmethod
-    def _build_base_file_name(case: Case, convictions: List[Charge]) -> str:
-        location = case.summary.location.lower()
-
-        # Douglas and Umatilla counties explicitly want the "Order" part of the old forms too.
-        if location in ["douglas", "umatilla"]:
-            if convictions:
-                return location + "_with_conviction_order.pdf"
-            else:
-                return location + "_with_arrest_order.pdf"
+    def _build_pdf(source_data: Union[UserInfo, CaseResults]):
+        # No case. Just use the OSP form.
+        if not isinstance(source_data, CaseResults):
+            file_name = FormFilling.OSP_PDF_NAME
         else:
-            return location + ".pdf"
+            file_name = FormFilling._get_file_name_for_case(source_data)
 
+        pdf_path = path.join(FormFilling.BASE_DIR, file_name)
+        mapper = PdfFieldMapper(pdf_path, source_data)
+
+        return PDF.fill_form(mapper)
 
 # https://westhealth.github.io/exploring-fillable-forms-with-pdfrw.html
 # https://akdux.com/python/2020/10/31/python-fill-pdf-files/
@@ -373,6 +416,7 @@ class FormFilling:
 class PdfFieldMapper(UserDict):
     def __init__(self, pdf_source_path: str, source_data: Union[UserInfo, CaseResults]):
         super().__init__()
+
         self.pdf_source_path = pdf_source_path
         self.source_data = source_data
 
@@ -430,7 +474,7 @@ class PdfFieldMapper(UserDict):
             "(I was sentenced to probation in this case and)": s.has_probation_revoked,
             # "(My probation WAS NOT revoked)"
             "(My probation WAS revoked and 3 years have passed since the date of revocation)": s.has_probation_revoked,
-            "(Date of arrest)": s.arrest_dates_all,
+            "(Date of arrest)": s.arrest_dates,
             # "(If no arrest date date of citation booking or incident)": # NEW FIELD
             # "(Arresting Agency)"
             "(no accusatory instrument was filed and at least 60 days have passed since the)": s.has_no_complaint,
@@ -450,15 +494,17 @@ class PdfFieldMapper(UserDict):
             # "(Date_2)"
             # "(Signature_2)"
             "(Name typed or printed_2)": s.full_name,
+
             # The following fields are additional fields from oregon_with_conviction_order.pdf.
             "(County)": s.county,
             "(Case Number)": s.case_number_with_comments,
             "(Case Name)": s.case_name,
-            "(Arrest Dates All)": s.arrest_dates_all,
+            "(Arrest Dates All)": s.arrest_dates,
             "(Charges All)": s.charge_names,
             # "(Arresting Agency)": s.arresting_agency,
             "(Conviction Dates)": s.conviction_dates,
             "(Conviction Charges)": s.conviction_names,
+
             # The following fields are additional fields from oregon_with_arrest_order.pdf.
             "(Dismissed Arrest Dates)": s.dismissed_arrest_dates,
             "(Dismissed Charges)": s.dismissed_names,
@@ -474,7 +520,7 @@ class PdfFieldMapper(UserDict):
             "(Dismissed Arrest Dates)": s.dismissed_arrest_dates,
             "(Dismissed Charges)": s.dismissed_names,
             "(I Full Name)": s.full_name,
-            "(Arrest Dates All)": s.arrest_dates_all,
+            "(Arrest Dates All)": s.arrest_dates,
             "(Conviction Dates)": s.conviction_dates,
             "(Conviction Charges)": s.conviction_names,
         }
@@ -499,7 +545,6 @@ class PDF:
     FONT_SIZE_SMALL = "6"
     DATE_FORMAT = "%b %-d, %Y"
     STR_CONNECTOR = "; "
-    INELIGIBLE_WARNING = "This form will attempt to expunge a case in part. This is relatively rare, and thus these forms should be reviewed particularly carefully."
 
     @staticmethod
     def fill_form(mapper: PdfFieldMapper, opts=None):
@@ -515,10 +560,6 @@ class PDF:
         self.mapper = mapper
         self.field_width_factors = full_opts.get("field_width_factors")
         self.warnings: List[str] = []
-
-        # TODO move this to the add_warnings_to_pdf method
-        if mapper.get("has_ineligible_charges"):
-            self.warnings.append(self.INELIGIBLE_WARNING)
 
         if full_opts.get("assert_blank_pdf"):
             self._assert_blank_pdf()
@@ -541,13 +582,10 @@ class PDF:
 
     def set_text_value(self, annotation, value):
         new_value = value
-        if new_value is None:
-            return
 
         if isinstance(value, list):
             if len(value) == 0:
                 return
-            
             get_attr = lambda elem: elem.strftime(self.DATE_FORMAT) if isinstance(elem, DateWithFuture) else elem
             new_value = self.STR_CONNECTOR.join(get_attr(elem) for elem in value if elem)
 
@@ -558,11 +596,10 @@ class PDF:
 
     def adjust_field_width(self, annotation, width_factor: float = None):
         width_factor = self.field_width_factors.get(annotation.T)
-        if width_factor is None:
-            return
 
-        x1, x2 = float(annotation.Rect[0]), float(annotation.Rect[2])
-        annotation.Rect[2] = x1 + (x2 - x1) * width_factor
+        if width_factor is not None:
+            x1, x2 = float(annotation.Rect[0]), float(annotation.Rect[2])
+            annotation.Rect[2] = x1 + (x2 - x1) * width_factor
 
     def set_font(self, annotation):
         x1, x2 = float(annotation.Rect[0]), float(annotation.Rect[2])
@@ -587,8 +624,10 @@ class PDF:
             if annotation.FT == self.BUTTON_TYPE and new_value:
                 self.set_checkbox_on(annotation)
 
-            if annotation.FT == self.TEXT_TYPE:
-                self.adjust_field_width(annotation)
+            if annotation.FT == self.TEXT_TYPE and new_value is not None:
+                if self.field_width_factors is not None:
+                    self.adjust_field_width(annotation)
+
                 self.set_text_value(annotation, new_value)
 
         self._pdf.Root.AcroForm.update(PdfDict(NeedAppearances=PdfObject("true")))
@@ -598,7 +637,7 @@ class PDF:
         writer.addpages(self._pdf.pages)
 
         if before_write:
-            before_write(writer, self.warnings)
+            before_write(writer, self.warnings, self.mapper)
 
         trailer = writer.trailer
         trailer.Root.AcroForm = self._pdf.Root.AcroForm
