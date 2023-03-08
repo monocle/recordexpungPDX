@@ -2,7 +2,7 @@ from dataclasses import dataclass, replace, asdict
 from os import path
 from pathlib import Path
 from tempfile import mkdtemp
-from typing import List, Dict, Tuple, Union, Callable
+from typing import List, Dict, Tuple, Union, Callable, Optional
 from zipfile import ZipFile
 from collections import UserDict
 
@@ -69,9 +69,6 @@ class Charges:
 
     @property
     def names(self) -> List[str]:
-        """
-        Returns the names of the charges in title case.
-        """
         return [charge.name.title() for charge in self._charges]
 
     def dates(self, is_disposition=False) -> List[DateWithFuture]:
@@ -87,9 +84,6 @@ class Charges:
 
     @property
     def empty(self) -> bool:
-        """
-        Returns whether there are no charges or there are.
-        """
         return len(self._charges) == 0
 
     def has_any(self, type) -> bool:
@@ -138,8 +132,8 @@ class CaseResults(UserInfo):
     case_number: str
     has_no_balance: bool
     da_number: str
-    da_address: str = None
-    case_number_with_comments: str = None
+    da_address: Optional[str] = None
+    case_number_with_comments: Optional[str] = None
 
     @staticmethod
     def build(case: Case, user_info: UserInfo, sid: str):
@@ -156,11 +150,11 @@ class CaseResults(UserInfo):
         return from_dict(data_class=CaseResults, data=data)
 
     def __post_init__(self):
-        filtered_charges = [c for c in self.case.charges if c.edit_status != EditStatus.DELETE]
+        filtered_charges = tuple(c for c in self.case.charges if c.edit_status != EditStatus.DELETE)
         eligible_charges, ineligible_charges = Case.partition_by_eligibility(filtered_charges)
         dismissed, convictions = Case.categorize_charges(eligible_charges)
 
-        self.charges = Charges(filtered_charges)
+        self.charges = Charges(list(filtered_charges))
         self.eligible_charges = Charges(eligible_charges)
         self.ineligible_charges = Charges(ineligible_charges)
         self.dismissed = Charges(dismissed)
@@ -231,7 +225,7 @@ class CaseResults(UserInfo):
     ##### Convicted charges #####
 
     @property
-    def conviction_names(self) -> bool:
+    def conviction_names(self) -> List[str]:
         return self.convictions.names
 
     @property
@@ -267,122 +261,6 @@ class CaseResults(UserInfo):
         return self.convictions.has_any_with_getter(lambda charge: charge.probation_revoked)
 
 
-class PdfFieldMapper:
-    pass
-
-
-class FormFilling:
-    OREGON_ARREST_PDF_NAME = "oregon_with_arrest_order.pdf"
-    OREGON_CONVICTION_PDF_NAME = "oregon_with_conviction_order.pdf"
-    MULTNOMAH_ARREST_PDF_NAME = "multnomah_arrest.pdf"
-    MULTNOMAH_CONVICTION_PDF_NAME = "multnomah_conviction.pdf"
-    OSP_PDF_NAME = "OSP_Form.pdf"
-    DEFAULT_PDF_NAME = "oregon.pdf"
-    ZIP_FILE_NAME = "expungement_packet.zip"
-    BASE_DIR = path.join(Path(__file__).parent, "files")
-    INELIGIBLE_WARNING = "This form will attempt to expunge a case in part. This is relatively rare, and thus these forms should be reviewed particularly carefully."
-
-    @staticmethod
-    def build_zip(record_summary: RecordSummary, user_information_dict: Dict[str, str]) -> Tuple[str, str]:
-        temp_dir = mkdtemp()
-        zip_dir = mkdtemp()
-        zip_path = path.join(zip_dir, FormFilling.ZIP_FILE_NAME)
-        zipfile = ZipFile(zip_path, "w")
-
-        sid = FormFilling._unify_sids(record_summary)
-        user_info = from_dict(data_class=UserInfo, data=user_information_dict)
-
-        for case in record_summary.record.cases:
-            case_results = CaseResults.build(case=case, user_info=user_info, sid=sid)
-
-            if case_results.is_expungeable_now:
-                pdf = FormFilling._build_pdf(case_results)
-                file_name, file_path = FormFilling._build_download_file_path(temp_dir, case_results)
-
-                pdf.write(file_path, lambda writer, warnings, mapper: FormFilling._add_warnings(writer, warnings, mapper))
-                zipfile.write(file_path, file_name)
-
-        # Add OSP form
-        osp_pdf = FormFilling._build_pdf(user_info)
-        zip_file_path = path.join(temp_dir, FormFilling.OSP_PDF_NAME)
-
-        osp_pdf.write(zip_file_path)
-        zipfile.write(zip_file_path, FormFilling.OSP_PDF_NAME)
-        zipfile.close()
-
-        return zip_path, FormFilling.ZIP_FILE_NAME
-
-    @staticmethod
-    def _unify_sids(record_summary: RecordSummary) -> str:
-        """
-        We just take the first non-empty SID for now.
-        """
-        for case in record_summary.record.cases:
-            if case.summary.sid:
-                return case.summary.sid
-        return ""
-
-    # TODO move to PDF
-    @staticmethod
-    def _add_warnings(writer: PdfWriter, warnings: List[str], mapper: PdfFieldMapper):
-        if mapper.get("has_ineligible_charges"):
-            warnings.insert(0, FormFilling.INELIGIBLE_WARNING)
-
-        if warnings:
-            text = "# Warnings from RecordSponge  \n"
-            text += "Do not submit this page to the District Attorney's office.  \n \n"
-            for warning in warnings:
-                text += f"* {warning}  \n"
-            blank_pdf_bytes = MarkdownToPDF.to_pdf("Addendum", text)
-            blank_pdf = PdfReader(fdata=blank_pdf_bytes)
-            writer.addpages(blank_pdf.pages)
-
-    @staticmethod
-    def _build_download_file_path(dir: str, case_results: CaseResults) -> str:
-        county = case_results.county.lower()
-        # Douglas and Umatilla counties explicitly want the "Order" part of the old forms too.
-        if county in ["douglas", "umatilla"]:
-            if case_results.has_conviction:
-                base_name = county + "_with_conviction_order.pdf"
-            else:
-                base_name = county + "_with_arrest_order.pdf"
-        else:
-            base_name = county + ".pdf"
-
-        file_name = f"{case_results.case_name}_{case_results.case_number}_{base_name}"
-        return file_name, path.join(dir, file_name)
-
-    @staticmethod
-    def _get_file_name_for_case(case_results: CaseResults):
-        # Douglas and Umatilla counties explicitly want the "Order" part of the old forms too.
-        if case_results.county in ["Douglas", "Umatilla"]:
-            if case_results.has_conviction:
-                file_name = FormFilling.OREGON_CONVICTION_PDF_NAME
-            else:
-                file_name = FormFilling.OREGON_ARREST_PDF_NAME
-        elif case_results.county == "Multnomah":
-            if case_results.has_conviction:
-                file_name = FormFilling.MULTNOMAH_CONVICTION_PDF_NAME
-            else:
-                file_name = FormFilling.MULTNOMAH_ARREST_PDF_NAME
-        else:
-            file_name = FormFilling.DEFAULT_PDF_NAME
-        
-        return file_name
-
-
-    @staticmethod
-    def _build_pdf(source_data: Union[UserInfo, CaseResults]):
-        # No case. Just use the OSP form.
-        if not isinstance(source_data, CaseResults):
-            file_name = FormFilling.OSP_PDF_NAME
-        else:
-            file_name = FormFilling._get_file_name_for_case(source_data)
-
-        pdf_path = path.join(FormFilling.BASE_DIR, file_name)
-        mapper = PdfFieldMapper(pdf_path, source_data)
-
-        return PDF.fill_form(mapper)
 
 # https://westhealth.github.io/exploring-fillable-forms-with-pdfrw.html
 # https://akdux.com/python/2020/10/31/python-fill-pdf-files/
@@ -391,50 +269,55 @@ class FormFilling:
 # Test in: Chrome, Firefox, Safari, Apple Preview and Acrobat Reader.
 # When testing generated PDFs, testing must include using the browser to open and view the PDFs.
 # Chrome and Firefox seem to have similar behavior while Safari and Apple Preview behvave similarly.
-# For example, Apple will show a checked AcroForm checkbox field when an annotation's AP has been set to "".
+# For example, Apple will show a checked AcroForm checkbox field when an annotation's AP has been set to ""
 # while Chrome and Firefox won't.
 #
-# Note: when printing pdfrw objects to screen during debugginp, not all attributes are displayed. Stream objects
+# Note: when printing pdfrw objects to screen during debugging, not all attributes are displayed. Stream objects
 # can have many more nested properties.
-    # Process to create the map:
-    # 1. Open the ODJ criminal set aside PDF in Acrobat.
-    # 2. Click on "Prepare Form". This will add all of the form's fields and
-    #    make them available via Root.AcroForm.Fields in the PDF encoding.
-    # 3. Adjust any fields as necessary, ex. move "(Address)" up to the
-    #    correct line. Sometimes a AcroForm.Field is created, but no annotation
-    #    is assocated with it, ex "undefined" field that has no label. In this
-    #    case, delete the filed and create a new text field via the
-    #    "Add a new text field" button. Also, if there are fields with the same
-    #    names, then they wont' get annotations and would need to be renamed.
-    # 4. Save this as a new PDF.
-    # 5. Add to expungeservice/files/ folder.
-    #
-    # Maps the names of the PDF fields (pdf.Root.AcroForm.Fields or page.Annots)
-    # to `form_data_dict` keys used for other forms.
-    # The order is what comes out of Root.AcroForm.Fields.
-    # Commented fields are those we are not filling in.
-class PdfFieldMapper(UserDict):
+# Process to create the map:
+# 1. Open the PDF in Acrobat.
+# 2. Click on "Prepare Form". This will add all of the form's fields and
+#    make them available via Root.AcroForm.Fields in the PDF encoding. In addition,
+#    annotations will be created for the corresponding fields.
+# 3. Adjust any fields as necessary, ex. move "(Address)" up to the
+#    correct line. Sometimes a AcroForm.Field is created, but no annotation
+#    is assocated with it, ex "undefined" field that has no label. In this
+#    case, delete the filed and create a new text field via the
+#    "Add a new text field" button. Also, if there are fields with the same
+#    names, then they wont' get annotations and would need to be renamed.
+# 4. Save this as a new PDF.
+# 5. Add to expungeservice/files/ folder.
+class PDFFieldMapper(UserDict):
+    """
+    Maps the names of the PDF fields (pdf.Root.AcroForm.Fields or page.Annots)
+    to app variables. The order is what comes out of Root.AcroForm.Fields.
+    Commented fields are those we are not filling in.
+    """
     def __init__(self, pdf_source_path: str, source_data: Union[UserInfo, CaseResults]):
         super().__init__()
 
         self.pdf_source_path = pdf_source_path
         self.source_data = source_data
 
-        if not isinstance(source_data, CaseResults):
-            self.data = self.get_user_definition()
-        elif "multnomah" in pdf_source_path:
-            self.data = {
-                **self.get_user_definition(),
-                **self.get_multnomah_definition()
-            }
+        if isinstance(self.source_data, CaseResults):
+            if "multnomah" in pdf_source_path:
+                self.data = {
+                    **self.get_user_definition(),
+                    **self.get_multnomah_definition()
+                }
+            else:
+                self.data = {
+                    **self.get_user_definition(),
+                    **self.get_oregon_definition()
+                }
         else:
-            self.data = {
-                **self.get_user_definition(),
-                **self.get_oregon_definition()
-            }
+            self.data = self.get_user_definition()
 
     def get_oregon_definition(self):
-        s: CaseResults = self.source_data
+        s = self.source_data
+        if not isinstance(s, CaseResults):
+            return {}
+
         return {
             "(FOR THE COUNTY OF)": s.county,
             "(Plaintiff)": "State of Oregon",
@@ -510,8 +393,12 @@ class PdfFieldMapper(UserDict):
             "(Dismissed Charges)": s.dismissed_names,
             "(Dismissed Dates)": s.dismissed_dates,
         }
+ 
     def get_multnomah_definition(self):
-        s: CaseResults = self.source_data
+        s = self.source_data
+        if not isinstance(s, CaseResults):
+            return {}
+
         return {
             "(Case Name)": s.case_name,
             "(Case Number)": s.case_number_with_comments,
@@ -547,21 +434,17 @@ class PDF:
     STR_CONNECTOR = "; "
 
     @staticmethod
-    def fill_form(mapper: PdfFieldMapper, opts=None):
+    def fill_form(mapper: PDFFieldMapper):
         pdf = PDF(mapper, {"field_width_factors": {"(Date of arrest)": 3}})
         pdf.update_annotations()
         return pdf
 
-    def __init__(self, mapper: PdfFieldMapper, opts=None):
-        default_opts = {"assert_blank_pdf": False, "field_width_factors": None}
-        full_opts = {**default_opts, **(opts or {})}
-
+    def __init__(self, mapper: PDFFieldMapper, opts=None):
         self.set_pdf(PdfReader(mapper.pdf_source_path))
         self.mapper = mapper
-        self.field_width_factors = full_opts.get("field_width_factors")
         self.warnings: List[str] = []
 
-        if full_opts.get("assert_blank_pdf"):
+        if opts and opts.get("assert_blank_pdf"):
             self._assert_blank_pdf()
 
     def set_pdf(self, pdf: PdfReader):
@@ -569,13 +452,13 @@ class PDF:
         self.annotations = [annot for page in self._pdf.pages for annot in page.Annots or []]
         self.fields = {field.T: field for field in self._pdf.Root.AcroForm.Fields}
 
+    """
+    Need to update both the V and AS fields of a Btn and they should be the same.
+    The value to use is found in annotation.AP.N.keys() and not
+    necessarily "/Yes". If a new form has been made, make sure to check
+    which value to use here and redefine BUTTON_ON if needed.
+    """
     def set_checkbox_on(self, annotation):
-        """
-        Need to update both the V and AS fields of a Btn and they should be the same.
-        The value to use is found in annotation.AP.N.keys() and not
-        necessarily "/Yes". If a new form has been made, make sure to check
-        which value to use here and redefine BUTTON_ON if needed.
-        """
         assert self.BUTTON_ON in annotation.AP.N.keys()
         annotation.V = self.BUTTON_ON
         annotation.AS = self.BUTTON_ON
@@ -594,13 +477,6 @@ class PDF:
         self.set_font(annotation)
         annotation.update(PdfDict(AP=""))
 
-    def adjust_field_width(self, annotation, width_factor: float = None):
-        width_factor = self.field_width_factors.get(annotation.T)
-
-        if width_factor is not None:
-            x1, x2 = float(annotation.Rect[0]), float(annotation.Rect[2])
-            annotation.Rect[2] = x1 + (x2 - x1) * width_factor
-
     def set_font(self, annotation):
         x1, x2 = float(annotation.Rect[0]), float(annotation.Rect[2])
         max_chars = (x2 - x1) * 0.3125  # Times New Roman size 10
@@ -609,15 +485,13 @@ class PDF:
 
         if num_chars > max_chars:
             font_size = self.FONT_SIZE_SMALL
+            # TODO move verbiage of message to FormFilling
             message = f'The font size of "{annotation.V[1:-1]}" was shrunk to fit the bounding box of "{annotation.T[1:-1]}". An addendum might be required if it still doesn\'t fit.'
             self.warnings.append(message)
 
         annotation.DA = PdfString.encode(f"/{self.FONT_FAMILY} {font_size} Tf 0 g")
 
-    def update_annotations(self, form_data: Dict[str, str] = None, definition="oregon") -> PdfFieldMapper:
-        if form_data:
-            self.mapper = PdfFieldMapper(form_data, definition)
-
+    def update_annotations(self):
         for annotation in self.annotations:
             new_value = self.mapper.get(annotation.T)
 
@@ -625,9 +499,6 @@ class PDF:
                 self.set_checkbox_on(annotation)
 
             if annotation.FT == self.TEXT_TYPE and new_value is not None:
-                if self.field_width_factors is not None:
-                    self.adjust_field_width(annotation)
-
                 self.set_text_value(annotation, new_value)
 
         self._pdf.Root.AcroForm.update(PdfDict(NeedAppearances=PdfObject("true")))
@@ -646,6 +517,9 @@ class PDF:
     def get_annotation_dict(self):
         return {anot.T: anot for anot in self.annotations}
 
+    def get_annotation_values(self):
+        return {anot.T: anot.V for anot in self.annotations}
+
     def get_field_dict(self):
         return {field.T: field.V for field in self._pdf.Root.AcroForm.Fields}
 
@@ -657,3 +531,115 @@ class PDF:
 
         for annotation in self.annotations:
             assert annotation.V is None, not_blank_message(annotation)
+
+
+class FormFilling:
+    OREGON_ARREST_PDF_NAME = "oregon_with_arrest_order.pdf"
+    OREGON_CONVICTION_PDF_NAME = "oregon_with_conviction_order.pdf"
+    MULTNOMAH_ARREST_PDF_NAME = "multnomah_arrest.pdf"
+    MULTNOMAH_CONVICTION_PDF_NAME = "multnomah_conviction.pdf"
+    OSP_PDF_NAME = "OSP_Form.pdf"
+    DEFAULT_PDF_NAME = "oregon.pdf"
+    ZIP_FILE_NAME = "expungement_packet.zip"
+    BASE_DIR = path.join(Path(__file__).parent, "files")
+    INELIGIBLE_WARNING = "This form will attempt to expunge a case in part. This is relatively rare, and thus these forms should be reviewed particularly carefully."
+
+    @staticmethod
+    def build_zip(record_summary: RecordSummary, user_information_dict: Dict[str, str]) -> Tuple[str, str]:
+        temp_dir = mkdtemp()
+        zip_dir = mkdtemp()
+        zip_path = path.join(zip_dir, FormFilling.ZIP_FILE_NAME)
+        zipfile = ZipFile(zip_path, "w")
+
+        sid = FormFilling._unify_sids(record_summary)
+        user_info = from_dict(data_class=UserInfo, data=user_information_dict)
+
+        for case in record_summary.record.cases:
+            case_results = CaseResults.build(case=case, user_info=user_info, sid=sid)
+
+            if case_results.is_expungeable_now:
+                pdf = FormFilling._build_pdf(case_results)
+                file_name, file_path = FormFilling._build_download_file_path(temp_dir, case_results)
+
+                pdf.write(file_path, before_write=FormFilling._add_warnings)
+                zipfile.write(file_path, file_name)
+
+        # Add OSP form
+        osp_pdf = FormFilling._build_pdf(user_info)
+        zip_file_path = path.join(temp_dir, FormFilling.OSP_PDF_NAME)
+
+        osp_pdf.write(zip_file_path)
+        zipfile.write(zip_file_path, FormFilling.OSP_PDF_NAME)
+        zipfile.close()
+
+        return zip_path, FormFilling.ZIP_FILE_NAME
+
+    @staticmethod
+    def _unify_sids(record_summary: RecordSummary) -> str:
+        """
+        We just take the first non-empty SID for now.
+        """
+        for case in record_summary.record.cases:
+            if case.summary.sid:
+                return case.summary.sid
+        return ""
+
+    @staticmethod
+    def _add_warnings(writer: PdfWriter, warnings: List[str], mapper: PDFFieldMapper):
+        if mapper.get("has_ineligible_charges"):
+            warnings.insert(0, FormFilling.INELIGIBLE_WARNING)
+
+        if warnings:
+            text = "# Warnings from RecordSponge  \n"
+            text += "Do not submit this page to the District Attorney's office.  \n \n"
+            for warning in warnings:
+                text += f"* {warning}  \n"
+            blank_pdf_bytes = MarkdownToPDF.to_pdf("Addendum", text)
+            blank_pdf = PdfReader(fdata=blank_pdf_bytes)
+            writer.addpages(blank_pdf.pages)
+
+    @staticmethod
+    def _build_download_file_path(dir: str, case_results: CaseResults) -> Tuple[str, str]:
+        county = case_results.county.lower()
+
+        # Douglas and Umatilla counties explicitly want the "Order" part of the old forms too.
+        if county in ["douglas", "umatilla"]:
+            if case_results.has_conviction:
+                base_name = county + "_with_conviction_order.pdf"
+            else:
+                base_name = county + "_with_arrest_order.pdf"
+        else:
+            base_name = county + ".pdf"
+
+        file_name = f"{case_results.case_name}_{case_results.case_number}_{base_name}"
+        return file_name, path.join(dir, file_name)
+
+    @staticmethod
+    def _get_file_name_for_case(case_results: CaseResults):
+        # Douglas and Umatilla counties explicitly want the "Order" part of the old forms too.
+        if case_results.county in ["Douglas", "Umatilla"]:
+            if case_results.has_conviction:
+                file_name = FormFilling.OREGON_CONVICTION_PDF_NAME
+            else:
+                file_name = FormFilling.OREGON_ARREST_PDF_NAME
+        elif case_results.county == "Multnomah":
+            if case_results.has_conviction:
+                file_name = FormFilling.MULTNOMAH_CONVICTION_PDF_NAME
+            else:
+                file_name = FormFilling.MULTNOMAH_ARREST_PDF_NAME
+        else:
+            file_name = FormFilling.DEFAULT_PDF_NAME
+        
+        return file_name
+
+    @staticmethod
+    def _build_pdf(source_data: Union[UserInfo, CaseResults]):
+        if not isinstance(source_data, CaseResults):
+            file_name = FormFilling.OSP_PDF_NAME  # No case. Just use the OSP form.
+        else:
+            file_name = FormFilling._get_file_name_for_case(source_data)
+
+        pdf_path = path.join(FormFilling.BASE_DIR, file_name)
+        mapper = PDFFieldMapper(pdf_path, source_data)
+
+        return PDF.fill_form(mapper)
