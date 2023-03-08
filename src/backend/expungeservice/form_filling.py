@@ -14,7 +14,7 @@ from expungeservice.models.charge import Charge, EditStatus
 from expungeservice.models.charge_types.contempt_of_court import ContemptOfCourt
 from expungeservice.models.charge_types.felony_class_b import FelonyClassB
 from expungeservice.models.charge_types.felony_class_c import FelonyClassC
-from expungeservice.models.charge_types.marijuana_eligible import MarijuanaViolation, MarijuanaEligible
+from expungeservice.models.charge_types.marijuana_eligible import MarijuanaViolation
 from expungeservice.models.charge_types.misdemeanor_class_a import MisdemeanorClassA
 from expungeservice.models.charge_types.misdemeanor_class_bc import MisdemeanorClassBC
 from expungeservice.models.charge_types.reduced_to_violation import ReducedToViolation
@@ -163,8 +163,10 @@ class CaseResults(UserInfo):
         county = self.county.replace(" ", "_").lower()
         self.da_address = DA_ADDRESSES.get(county, "")
 
-        in_part = ", ".join(self.short_eligible_ids)
-        self.case_number_with_comments = f"{self.case_number} (charge {in_part} only)" if self.has_ineligible_charges else self.case_number
+        self.case_number_with_comments = self.case_number
+        if self.has_ineligible_charges:
+            in_part = ", ".join(self.short_eligible_ids)
+            self.case_number_with_comments = f"{self.case_number} (charge {in_part} only)"
 
     ##### All charges #####
 
@@ -242,7 +244,7 @@ class CaseResults(UserInfo):
 
     @property
     def has_class_c_felony(self) -> bool:
-        return self.convictions.has_any([FelonyClassC, "Felony Class C"]) 
+        return self.convictions.has_any([FelonyClassC, "Felony Class C"])
 
     @property
     def has_class_a_misdemeanor(self) -> bool:
@@ -259,7 +261,6 @@ class CaseResults(UserInfo):
     @property
     def has_probation_revoked(self) -> bool:
         return self.convictions.has_any_with_getter(lambda charge: charge.probation_revoked)
-
 
 
 # https://westhealth.github.io/exploring-fillable-forms-with-pdfrw.html
@@ -293,6 +294,7 @@ class PDFFieldMapper(UserDict):
     to app variables. The order is what comes out of Root.AcroForm.Fields.
     Commented fields are those we are not filling in.
     """
+
     def __init__(self, pdf_source_path: str, source_data: Union[UserInfo, CaseResults]):
         super().__init__()
 
@@ -301,15 +303,9 @@ class PDFFieldMapper(UserDict):
 
         if isinstance(self.source_data, CaseResults):
             if "multnomah" in pdf_source_path:
-                self.data = {
-                    **self.get_user_definition(),
-                    **self.get_multnomah_definition()
-                }
+                self.data = {**self.get_user_definition(), **self.get_multnomah_definition()}
             else:
-                self.data = {
-                    **self.get_user_definition(),
-                    **self.get_oregon_definition()
-                }
+                self.data = {**self.get_user_definition(), **self.get_oregon_definition()}
         else:
             self.data = self.get_user_definition()
 
@@ -377,7 +373,6 @@ class PDFFieldMapper(UserDict):
             # "(Date_2)"
             # "(Signature_2)"
             "(Name typed or printed_2)": s.full_name,
-
             # The following fields are additional fields from oregon_with_conviction_order.pdf.
             "(County)": s.county,
             "(Case Number)": s.case_number_with_comments,
@@ -387,13 +382,12 @@ class PDFFieldMapper(UserDict):
             # "(Arresting Agency)": s.arresting_agency,
             "(Conviction Dates)": s.conviction_dates,
             "(Conviction Charges)": s.conviction_names,
-
             # The following fields are additional fields from oregon_with_arrest_order.pdf.
             "(Dismissed Arrest Dates)": s.dismissed_arrest_dates,
             "(Dismissed Charges)": s.dismissed_names,
             "(Dismissed Dates)": s.dismissed_dates,
         }
- 
+
     def get_multnomah_definition(self):
         s = self.source_data
         if not isinstance(s, CaseResults):
@@ -411,6 +405,7 @@ class PDFFieldMapper(UserDict):
             "(Conviction Dates)": s.conviction_dates,
             "(Conviction Charges)": s.conviction_names,
         }
+
     def get_user_definition(self):
         s: UserInfo = self.source_data
         return {
@@ -423,6 +418,7 @@ class PDFFieldMapper(UserDict):
             "(Zip Code)": s.zip_code,
         }
 
+
 class PDF:
     BUTTON_TYPE = "/Btn"
     BUTTON_ON = PdfName("On")
@@ -434,21 +430,22 @@ class PDF:
     STR_CONNECTOR = "; "
 
     @staticmethod
-    def fill_form(mapper: PDFFieldMapper):
-        pdf = PDF(mapper, {"field_width_factors": {"(Date of arrest)": 3}})
+    def fill_form(mapper: PDFFieldMapper, should_validate=False):
+        pdf = PDF(mapper)
+        if should_validate:
+            pdf.validate_initial_state()
+
         pdf.update_annotations()
         return pdf
 
-    def __init__(self, mapper: PDFFieldMapper, opts=None):
+    def __init__(self, mapper: PDFFieldMapper):
         self.set_pdf(PdfReader(mapper.pdf_source_path))
         self.mapper = mapper
-        self.warnings: List[str] = []
-
-        if opts and opts.get("assert_blank_pdf"):
-            self._assert_blank_pdf()
+        self.shrunk_fields: Dict[str, str] = {}
 
     def set_pdf(self, pdf: PdfReader):
         self._pdf = pdf
+        # TODO use dict instead of array here?
         self.annotations = [annot for page in self._pdf.pages for annot in page.Annots or []]
         self.fields = {field.T: field for field in self._pdf.Root.AcroForm.Fields}
 
@@ -458,6 +455,7 @@ class PDF:
     necessarily "/Yes". If a new form has been made, make sure to check
     which value to use here and redefine BUTTON_ON if needed.
     """
+
     def set_checkbox_on(self, annotation):
         assert self.BUTTON_ON in annotation.AP.N.keys()
         annotation.V = self.BUTTON_ON
@@ -485,9 +483,7 @@ class PDF:
 
         if num_chars > max_chars:
             font_size = self.FONT_SIZE_SMALL
-            # TODO move verbiage of message to FormFilling
-            message = f'The font size of "{annotation.V[1:-1]}" was shrunk to fit the bounding box of "{annotation.T[1:-1]}". An addendum might be required if it still doesn\'t fit.'
-            self.warnings.append(message)
+            self.shrunk_fields[annotation.T] = annotation.V
 
         annotation.DA = PdfString.encode(f"/{self.FONT_FAMILY} {font_size} Tf 0 g")
 
@@ -503,12 +499,12 @@ class PDF:
 
         self._pdf.Root.AcroForm.update(PdfDict(NeedAppearances=PdfObject("true")))
 
-    def write(self, path: str, before_write=None):
+    def write(self, path: str, append=None):
         writer = PdfWriter()
         writer.addpages(self._pdf.pages)
 
-        if before_write:
-            before_write(writer, self.warnings, self.mapper)
+        if append:
+            append(writer, self.shrunk_fields, self.mapper)
 
         trailer = writer.trailer
         trailer.Root.AcroForm = self._pdf.Root.AcroForm
@@ -523,14 +519,18 @@ class PDF:
     def get_field_dict(self):
         return {field.T: field.V for field in self._pdf.Root.AcroForm.Fields}
 
-    def _assert_blank_pdf(self):
-        not_blank_message = lambda elem: f"[PDF] PDF not blank: {elem.T} - {elem.V}"
+    def validate_initial_state(self):
+        not_blank_message = lambda elem, type: f"[PDF] PDF {type} not blank: {elem.T} - {elem.V}"
 
         for field in self._pdf.Root.AcroForm.Fields:
-            assert field.V is None, not_blank_message(field)
+            assert field.V is None, not_blank_message(field, "field")
 
         for annotation in self.annotations:
-            assert annotation.V is None, not_blank_message(annotation)
+            assert annotation.V is None, not_blank_message(annotation, "annotation")
+
+        assert set(self.get_field_dict()) == set(
+            self.get_annotation_dict()
+        ), "[PDF] PDF fields do not match annotations"
 
 
 class FormFilling:
@@ -542,7 +542,6 @@ class FormFilling:
     DEFAULT_PDF_NAME = "oregon.pdf"
     ZIP_FILE_NAME = "expungement_packet.zip"
     BASE_DIR = path.join(Path(__file__).parent, "files")
-    INELIGIBLE_WARNING = "This form will attempt to expunge a case in part. This is relatively rare, and thus these forms should be reviewed particularly carefully."
 
     @staticmethod
     def build_zip(record_summary: RecordSummary, user_information_dict: Dict[str, str]) -> Tuple[str, str]:
@@ -555,13 +554,13 @@ class FormFilling:
         user_info = from_dict(data_class=UserInfo, data=user_information_dict)
 
         for case in record_summary.record.cases:
-            case_results = CaseResults.build(case=case, user_info=user_info, sid=sid)
+            case_results = CaseResults.build(case, user_info, sid)
 
             if case_results.is_expungeable_now:
                 pdf = FormFilling._build_pdf(case_results)
                 file_name, file_path = FormFilling._build_download_file_path(temp_dir, case_results)
 
-                pdf.write(file_path, before_write=FormFilling._add_warnings)
+                pdf.write(file_path, append=FormFilling._add_warnings)
                 zipfile.write(file_path, file_name)
 
         # Add OSP form
@@ -585,15 +584,23 @@ class FormFilling:
         return ""
 
     @staticmethod
-    def _add_warnings(writer: PdfWriter, warnings: List[str], mapper: PDFFieldMapper):
+    def _add_warnings(writer: PdfWriter, shrunk_fields: Dict[str, str], mapper: PDFFieldMapper):
+        warnings: List[str] = []
+
         if mapper.get("has_ineligible_charges"):
-            warnings.insert(0, FormFilling.INELIGIBLE_WARNING)
+            warnings.append(
+                "This form will attempt to expunge a case in part. This is relatively rare, and thus these forms should be reviewed particularly carefully."
+            )
+
+        if shrunk_fields:
+            for field_name, value in shrunk_fields.items():
+                warnings.append(f'* The font size of "{value[1:-1]}" was shrunk to fit the bounding box of "{field_name[1:-1]}". An addendum might be required if it still doesn\'t fit.')
 
         if warnings:
             text = "# Warnings from RecordSponge  \n"
             text += "Do not submit this page to the District Attorney's office.  \n \n"
             for warning in warnings:
-                text += f"* {warning}  \n"
+                text += f"\* {warning}  \n"
             blank_pdf_bytes = MarkdownToPDF.to_pdf("Addendum", text)
             blank_pdf = PdfReader(fdata=blank_pdf_bytes)
             writer.addpages(blank_pdf.pages)
@@ -629,11 +636,11 @@ class FormFilling:
                 file_name = FormFilling.MULTNOMAH_ARREST_PDF_NAME
         else:
             file_name = FormFilling.DEFAULT_PDF_NAME
-        
+
         return file_name
 
     @staticmethod
-    def _build_pdf(source_data: Union[UserInfo, CaseResults]):
+    def _build_pdf(source_data: Union[UserInfo, CaseResults], validate_initial_pdf_state=False):
         if not isinstance(source_data, CaseResults):
             file_name = FormFilling.OSP_PDF_NAME  # No case. Just use the OSP form.
         else:
@@ -642,4 +649,4 @@ class FormFilling:
         pdf_path = path.join(FormFilling.BASE_DIR, file_name)
         mapper = PDFFieldMapper(pdf_path, source_data)
 
-        return PDF.fill_form(mapper)
+        return PDF.fill_form(mapper, validate_initial_pdf_state)
