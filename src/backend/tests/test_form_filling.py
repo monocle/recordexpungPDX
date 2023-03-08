@@ -194,32 +194,16 @@ class TestPDFFileNameAndDownloadPath:
 def assert_pdf_values(pdf: PDF, expected: Dict[str, str], opts=None):
     annotation_dict = pdf.get_annotation_dict()
 
-    if opts is None:
-        opts = {}
-
-    if not opts.get("paren_values"):
-        opts["paren_values"] = False
-
-    if not opts.get("constant_fields"):
-        opts["constant_fields"] = {}
-
-    def encoded_value(value: str):
-        if value != PDF.BUTTON_ON and not opts.get("paren_values"):
-            return PdfString.encode(value)
-        return value
-
-    for key, _value in expected.items():
-        value = encoded_value(_value)
+    for key, value in expected.items():
         assert annotation_dict[key].V == value, key
 
     # Ensure other fields are not set.
-    if opts and opts.get("assert_other_fields_empty"):
-        for key in set(annotation_dict) - set(expected):
-            value = annotation_dict[key].V
-            if annotation_dict[key].FT == PDF.TEXT_TYPE:
-                assert value is None, key
-            if annotation_dict[key].FT == PDF.BUTTON_TYPE:
-                assert value != PDF.BUTTON_ON, key
+    for key in set(annotation_dict) - set(expected):
+        value = annotation_dict[key].V
+        if annotation_dict[key].FT == PDF.TEXT_TYPE:
+            assert value is None, key
+        if annotation_dict[key].FT == PDF.BUTTON_TYPE:
+            assert value != PDF.BUTTON_ON, key
 
 
 #########################################
@@ -247,7 +231,7 @@ class TestBuildOSPPDF:
         }
         user_info = from_dict(data_class=UserInfo, data=user_data)
         pdf = FormFilling._build_pdf(user_info, validate_initial_pdf_state=True)
-        assert_pdf_values(pdf, expected_values, {"assert_other_fields_empty": True, "paren_values": True})
+        assert_pdf_values(pdf, expected_values)
 
 
 class TestBuildOregonPDF:
@@ -352,7 +336,7 @@ class TestBuildOregonPDF:
 
     def assert_pdf_values(self, pdf: PDF, new_expected_values):
         all_expected_values = {**self.expected_base_values, **new_expected_values}
-        assert_pdf_values(pdf, all_expected_values, {"assert_other_fields_empty": True, "paren_values": True})
+        assert_pdf_values(pdf, all_expected_values)
 
     ############# tests #############
 
