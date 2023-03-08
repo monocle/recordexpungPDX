@@ -1,7 +1,7 @@
 import os
 from tempfile import mkdtemp
 from zipfile import ZipFile
-from typing import Dict
+from typing import Dict, List
 from pathlib import Path
 import pickle
 from datetime import datetime
@@ -12,15 +12,19 @@ from pdfrw import PdfString
 from dacite import from_dict
 
 from expungeservice.expunger import Expunger
-from expungeservice.form_filling import FormFilling, PDF, UserInfo
+from expungeservice.form_filling import FormFilling, PDF, UserInfo, CaseResults
 from expungeservice.record_merger import RecordMerger
 from expungeservice.record_summarizer import RecordSummarizer
 from expungeservice.models.case import Case
 from expungeservice.models.charge import Charge
-from expungeservice.models.disposition import DispositionStatus
 from expungeservice.models.charge_types.contempt_of_court import ContemptOfCourt
 from expungeservice.models.charge_types.felony_class_b import FelonyClassB
+from expungeservice.models.charge_types.felony_class_c import FelonyClassC
+from expungeservice.models.charge_types.marijuana_eligible import MarijuanaViolation
+from expungeservice.models.charge_types.misdemeanor_class_a import MisdemeanorClassA
 from expungeservice.models.charge_types.misdemeanor_class_bc import MisdemeanorClassBC
+from expungeservice.models.charge_types.reduced_to_violation import ReducedToViolation
+from expungeservice.models.charge_types.violation import Violation
 from expungeservice.models.expungement_result import ChargeEligibilityStatus
 from expungeservice.util import DateWithFuture
 
@@ -113,70 +117,75 @@ class TestJohnCommonIntegration:
         assert set(file_paths) == set(expected_file_paths)
 
 
-# class TestJohnCommonArrestIntegration(TestJohnCommonIntegration):
-#     filename = "oregon_with_arrest_order.pdf"
-#     expected_form_values = oregon_arrest_john_common_pdf_fields
+class TestJohnCommonArrestIntegration(TestJohnCommonIntegration):
+    filename = "oregon_with_arrest_order.pdf"
+    expected_form_values = oregon_arrest_john_common_pdf_fields
 
 
-# class TestJohnCommonConvictionIntegration(TestJohnCommonIntegration):
-#     filename = "oregon_with_conviction_order.pdf"
-#     expected_form_values = oregon_conviction_john_common_pdf_fields
+class TestJohnCommonConvictionIntegration(TestJohnCommonIntegration):
+    filename = "oregon_with_conviction_order.pdf"
+    expected_form_values = oregon_conviction_john_common_pdf_fields
 
 
-# class TestJohnCommonMultnomahArrestIntegration(TestJohnCommonIntegration):
-#     filename = "multnomah_arrest.pdf"
-#     expected_form_values = multnomah_arrest_john_common_pdf_fields
+class TestJohnCommonMultnomahArrestIntegration(TestJohnCommonIntegration):
+    filename = "multnomah_arrest.pdf"
+    expected_form_values = multnomah_arrest_john_common_pdf_fields
 
 
-# class TestJohnCommonMultnomahConvictionIntegration(TestJohnCommonIntegration):
-#     filename = "multnomah_conviction.pdf"
-#     expected_form_values = multnomah_conviction_john_common_pdf_fields
+class TestJohnCommonMultnomahConvictionIntegration(TestJohnCommonIntegration):
+    filename = "multnomah_conviction.pdf"
+    expected_form_values = multnomah_conviction_john_common_pdf_fields
 
 
 #########################################
 
 
-# class TestFormFilling:
-#     dir_path = os.path.join(Path(__file__).parent.parent, "expungeservice", "files")
+class TestPDFFileNameAndDownloadPath:
+    dir_path = os.path.join(Path(__file__).parent.parent, "expungeservice", "files")
 
-#     def assert_correct_pdf_path(self, county: str, expected_file_name: str, has_convictions: bool):
-#         charges = [Mock()] if has_convictions else []
-#         mock_case = Mock()
+    def mock_case_results(self, county, has_convictions):
+        mock_case_results = Mock()
+        mock_case_results.county = county
+        mock_case_results.case_name = "case_name"
+        mock_case_results.case_number = "case_number"
+        mock_case_results.has_conviction = has_convictions
+        return mock_case_results
 
-#         with patch.object(mock_case.summary, "location", new=county):
-#             full_path = FormFilling._get_pdf_path(mock_case, charges)
-#             assert full_path == os.path.join(self.dir_path, expected_file_name)
+    def assert_correct_pdf_file_name(self, county: str, expected_file_name: str, has_convictions: bool = True):
+        res = self.mock_case_results(county, has_convictions)
+        file_name = FormFilling._get_file_name_for_case(res)
 
-#     def assert_correct_file_path(self, county: str, expected_file_name: str, has_convictions: bool):
-#         charges = [Mock()] if has_convictions else []
-#         mock_case = Mock()
+        assert file_name == expected_file_name
 
-#         with patch.object(mock_case.summary, "location", new=county):
-#             file_name = FormFilling._build_base_file_name(mock_case, charges)
-#             assert file_name == expected_file_name
+    def assert_correct_file_path(self, county: str, expected_file_name: str, has_convictions: bool):
+        res = self.mock_case_results(county, has_convictions)
+        file_name, file_path = FormFilling._build_download_file_path("dir", res)
 
-#     def test_correct_pdf_path_is_built(self):
-#         self.assert_correct_pdf_path("Douglas", FormFilling.OREGON_ARREST_PDF_NAME, has_convictions=False)
-#         self.assert_correct_pdf_path("Douglas", FormFilling.OREGON_CONVICTION_PDF_NAME, has_convictions=True)
+        assert file_name == "case_name_case_number_" + expected_file_name
+        assert file_path == "dir/case_name_case_number_" + expected_file_name
 
-#         self.assert_correct_pdf_path("Umatilla", FormFilling.OREGON_ARREST_PDF_NAME, has_convictions=False)
-#         self.assert_correct_pdf_path("Umatilla", FormFilling.OREGON_CONVICTION_PDF_NAME, has_convictions=True)
+    def test_correct_pdf_path_is_built(self):
+        self.assert_correct_pdf_file_name("Douglas", FormFilling.OREGON_ARREST_PDF_NAME, has_convictions=False)
+        self.assert_correct_pdf_file_name("Douglas", FormFilling.OREGON_CONVICTION_PDF_NAME, has_convictions=True)
 
-#         self.assert_correct_pdf_path("Multnomah", FormFilling.MULTNOMAH_ARREST_PDF_NAME, has_convictions=False)
-#         self.assert_correct_pdf_path("Multnomah", FormFilling.MULTNOMAH_CONVICTION_PDF_NAME, has_convictions=True)
+        self.assert_correct_pdf_file_name("Umatilla", FormFilling.OREGON_ARREST_PDF_NAME, has_convictions=False)
+        self.assert_correct_pdf_file_name("Umatilla", FormFilling.OREGON_CONVICTION_PDF_NAME, has_convictions=True)
 
-#         self.assert_correct_pdf_path("unknown", FormFilling.DEFAULT_PDF_NAME, has_convictions=False)
-#         self.assert_correct_pdf_path("unknown", FormFilling.DEFAULT_PDF_NAME, has_convictions=True)
+        self.assert_correct_pdf_file_name("Multnomah", FormFilling.MULTNOMAH_ARREST_PDF_NAME, has_convictions=False)
+        self.assert_correct_pdf_file_name("Multnomah", FormFilling.MULTNOMAH_CONVICTION_PDF_NAME, has_convictions=True)
 
-#     def test_correct_base_file_name_is_built(self):
-#         self.assert_correct_file_path("Douglas", "douglas_with_arrest_order.pdf", has_convictions=False)
-#         self.assert_correct_file_path("Douglas", "douglas_with_conviction_order.pdf", has_convictions=True)
+        self.assert_correct_pdf_file_name("unknown", FormFilling.DEFAULT_PDF_NAME, has_convictions=False)
+        self.assert_correct_pdf_file_name("unknown", FormFilling.DEFAULT_PDF_NAME, has_convictions=True)
 
-#         self.assert_correct_file_path("Umatilla", "umatilla_with_arrest_order.pdf", has_convictions=False)
-#         self.assert_correct_file_path("Umatilla", "umatilla_with_conviction_order.pdf", has_convictions=True)
+    def test_correct_file_path_is_built(self):
+        self.assert_correct_file_path("Douglas", "douglas_with_arrest_order.pdf", has_convictions=False)
+        self.assert_correct_file_path("Douglas", "douglas_with_conviction_order.pdf", has_convictions=True)
 
-#         self.assert_correct_file_path("Other", "other.pdf", has_convictions=False)
-#         self.assert_correct_file_path("Other", "other.pdf", has_convictions=True)
+        self.assert_correct_file_path("Umatilla", "umatilla_with_arrest_order.pdf", has_convictions=False)
+        self.assert_correct_file_path("Umatilla", "umatilla_with_conviction_order.pdf", has_convictions=True)
+
+        self.assert_correct_file_path("Other", "other.pdf", has_convictions=False)
+        self.assert_correct_file_path("Other", "other.pdf", has_convictions=True)
 
 
 #########################################
@@ -192,7 +201,7 @@ def assert_pdf_values(pdf: PDF, expected: Dict[str, str], opts=None):
         opts["paren_values"] = False
 
     if not opts.get("constant_fields"):
-        opts["constant_fields"] = TestOregonPDF.constant_fields
+        opts["constant_fields"] = {}
 
     def encoded_value(value: str):
         if value != PDF.BUTTON_ON and not opts.get("paren_values"):
@@ -203,647 +212,267 @@ def assert_pdf_values(pdf: PDF, expected: Dict[str, str], opts=None):
         value = encoded_value(_value)
         assert annotation_dict[key].V == value, key
 
-    # Ensure other text fields are not set.
-    # Test boolean field separately.
-    if opts and opts.get("assert_other_fields_empty") and opts.get("constant_fields"):
-        for key in set(annotation_dict) - set(expected) - set(opts.get("constant_fields")):
+    # Ensure other fields are not set.
+    if opts and opts.get("assert_other_fields_empty"):
+        for key in set(annotation_dict) - set(expected):
             value = annotation_dict[key].V
-
             if annotation_dict[key].FT == PDF.TEXT_TYPE:
                 assert value is None, key
             if annotation_dict[key].FT == PDF.BUTTON_TYPE:
                 assert value != PDF.BUTTON_ON, key
 
 
-# def assert_other_fields_not_checked(pdf: PDF, checked_fields):
-#     # If "(record of arrest with no charges filed)" is not check, then this will be checked.
-#     # This behavior is checked in it's own test.
-#     ignored = "(record of arrest with charges filed and the associated check all that apply)"
-#     annotation_dict = pdf.get_annotation_dict()
-#     constant_fields = TestOregonPDF.constant_fields.keys()
-
-#     for key, anot in annotation_dict.items():
-#         if not checked_fields.get(key) and key not in constant_fields and key != ignored and anot.FT == PDF.BUTTON_TYPE:
-#             assert anot.V is None, key
-
-
-# def assert_pdf_boolean_field(pdf: PDF, field_name: str, expected_field_names: List[str]):
-#     form_data = {field_name: True}
-#     expected_fields = {field_name: PDF.BUTTON_ON for field_name in expected_field_names}
-
-#     pdf.update_annotations(form_data)
-#     assert_pdf_values(pdf, expected_fields)
-#     assert_other_fields_not_checked(pdf, expected_fields)
-
-
-class TestOregonPDF:
-    constant_fields = {
-        "(Plaintiff)": "State of Oregon",
-        "(I am not currently charged with a crime)": PDF.BUTTON_ON,
-        "(The arrest or citation I want to set aside is not for a charge of Driving Under the Influence of)": PDF.BUTTON_ON,
-        "(have sent)": PDF.BUTTON_ON,
-    }
-#     ignored_fields = {
-#         "(Fingerprint number FPN  if known)": None,
-#         "(finding of Guilty Except for Insanity GEI)": None,
-#         "(provided in ORS 137223)": None,
-#         "(PSRB)": None,
-#         "(My probation WAS NOT revoked)": None,
-#         "(If no arrest date date of citation booking or incident)": None,
-#         "(will send a copy of my fingerprints to the Department of State Police)": None,
-#         "(Date)": None,
-#         "(Signature)": None,
-#         "(States mail a true and complete copy of this Motion to Set Aside and Declaration in Support to)": None,
-#         "(delivered or)": None,
-#         "(placed in the United)": None,
-#         "(the District Attorney at address 1)": None,
-#         "(the District Attorney at address 3)": None,
-#         "(Date_2)": None,
-#         "(Signature_2)": None,
-#     }
-#     form_data_string_fields = {
-#         "(FOR THE COUNTY OF)": "county_ACTUAL",
-#         "(Case No)": "case_number_ACTUAL",
-#         "(Defendant)": "case_name_ACTUAL",
-#         "(DOB)": "date_of_birth_ACTUAL",
-#         "(SID)": "sid_ACTUAL",
-#         "(Date of conviction contempt finding or judgment of GEI)": "conviction_dates_ACTUAL",
-#         "(Date of arrest)": "arrest_dates_all_ACTUAL",
-#         "(Arresting Agency)": "arresting_agency_ACTUAL",
-#         "(Name typed or printed)": "full_name_ACTUAL",
-#         "(Address)": "address_ACTUAL,    city_ACTUAL,    state_ACTUAL,    zip_code_ACTUAL,    phone_number_ACTUAL",
-#         "(the District Attorney at address 2)": "da_address_ACTUAL",
-#         "(Name typed or printed_2)": "full_name_ACTUAL",
-#     }
-#     form_data_boolean_fields = {
-#         "(record of arrest with no charges filed)": "has_no_complaint",
-#         "(record of arrest with charges filed and the associated check all that apply)": "!has_no_complaint",
-#         "(conviction)": "has_conviction",
-#         "(record of citation or charge that was dismissedacquitted)": "has_dismissed",
-#         "(contempt of court finding)": "has_contempt_of_court",
-#         "(ORS 137225 does not prohibit a setaside of this conviction see Instructions)": "has_conviction",
-#         "(Felony  Class B and)": "has_class_b_felony",
-#         "(Felony  Class C and)": "has_class_c_felony",
-#         "(Misdemeanor  Class A and)": "has_class_a_misdemeanor",
-#         "(Misdemeanor  Class B or C and)": "has_class_bc_misdemeanor",
-#         "(Violation or Contempt of Court and)": "has_violation_or_contempt_of_court",
-#         "(7 years have passed since the later of the convictionjudgment or release date and)": "has_class_b_felony",
-#         "(I have not been convicted of any other offense or found guilty except for insanity in)": "has_class_b_felony",
-#         "(5 years have passed since the later of the convictionjudgment or release date and)": "has_class_c_felony",
-#         "(I have not been convicted of any other offense or found guilty except for insanity in_2)": "has_class_c_felony",
-#         "(3 years have passed since the later of the convictionjudgment or release date and)": "has_class_a_misdemeanor",
-#         "(I have not been convicted of any other offense or found guilty except for insanity in_3)": "has_class_a_misdemeanor",
-#         "(1 year has passed since the later of the convictionfindingjudgment or release)": "has_class_bc_misdemeanor",
-#         "(I have not been convicted of any other offense or found guilty except for insanity)": "has_class_bc_misdemeanor",
-#         "(1 year has passed since the later of the convictionfindingjudgment or release_2)": "has_violation_or_contempt_of_court",
-#         "(I have not been convicted of any other offense or found guilty except for insanity_2)": "has_violation_or_contempt_of_court",
-#         "(I have fully completed complied with or performed all terms of the sentence of the court)": "has_conviction",
-#         "(I was sentenced to probation in this case and)": "has_probation_revoked",
-#         "(My probation WAS revoked and 3 years have passed since the date of revocation)": "has_probation_revoked",
-#         "(no accusatory instrument was filed and at least 60 days have passed since the)": "has_no_complaint",
-#         "(an accusatory instrument was filed and I was acquitted or the case was dismissed)": "has_dismissed",
-#     }
-
-#     @staticmethod
-#     def get_all_field_names() -> set:
-#         field_types = ["ignored_fields", "constant_fields", "form_data_string_fields", "form_data_boolean_fields"]
-#         grouped_field_names = [(getattr(TestOregonPDF, type).keys()) for type in field_types]
-#         return set(field_name for subgroup in grouped_field_names for field_name in subgroup)
-
-#     @pytest.fixture
-#     def pdf(self) -> PDF:
-#         return PDF("oregon", {"assert_blank_pdf": True})
-
-#     def test_all_the_fields_are_accounted_for(self, pdf: PDF):
-#         field_names = self.get_all_field_names()
-
-#         assert set(pdf.get_field_dict().keys()) == field_names
-#         assert set(anot.T for anot in pdf.annotations) == field_names
-
-#     def test_pdf_string_values_from_form_data(self, pdf: PDF):
-#         form_data = {
-#             "county": "county_ACTUAL",
-#             "case_number": "case_number_ACTUAL",
-#             "case_name": "case_name_ACTUAL",
-#             "date_of_birth": "date_of_birth_ACTUAL",
-#             "sid": "sid_ACTUAL",
-#             "conviction_dates": "conviction_dates_ACTUAL",
-#             "arrest_dates_all": "arrest_dates_all_ACTUAL",
-#             "dismissed_arrest_dates": "dismissed_arrest_dates_ACTUAL",
-#             "arresting_agency": "arresting_agency_ACTUAL",
-#             "full_name": "full_name_ACTUAL",
-#             "mailing_address": "address_ACTUAL",
-#             "city": "city_ACTUAL",
-#             "state": "state_ACTUAL",
-#             "zip_code": "zip_code_ACTUAL",
-#             "phone_number": "phone_number_ACTUAL",
-#             "da_address": "da_address_ACTUAL",
-#         }
-
-#         pdf.update_annotations(form_data)
-#         assert_pdf_values(pdf, self.form_data_string_fields)
-
-#     def test_pdf_values_that_are_ignored_or_constant(self, pdf: PDF):
-#         mapper = pdf.update_annotations({})
-#         ignored_field_names = (field_name for field_name in self.ignored_fields.keys())
-
-#         assert set(mapper.ignored_keys) == set(ignored_field_names)
-#         assert_pdf_values(pdf, self.constant_fields)
-
-#     def test_pdf_boolean_has_no_complaint_on(self, pdf: PDF):
-#         assert_pdf_boolean_field(
-#             pdf,
-#             "has_no_complaint",
-#             [
-#                 "(record of arrest with no charges filed)",
-#                 "(no accusatory instrument was filed and at least 60 days have passed since the)",
-#             ],
-#         )
-
-#     def test_pdf_boolean_has_no_complaint_off(self, pdf: PDF):
-#         form_data = {"has_no_complaint": False}
-#         expected_fields = {
-#             "(record of arrest with charges filed and the associated check all that apply)": PDF.BUTTON_ON,
-#         }
-#         pdf.update_annotations(form_data)
-#         assert_pdf_values(pdf, expected_fields)
-#         assert_other_fields_not_checked(pdf, expected_fields)
-
-#     def test_pdf_boolean_has_conviction(self, pdf: PDF):
-#         assert_pdf_boolean_field(
-#             pdf,
-#             "has_conviction",
-#             [
-#                 "(conviction)",
-#                 "(ORS 137225 does not prohibit a setaside of this conviction see Instructions)",
-#                 "(I have fully completed complied with or performed all terms of the sentence of the court)",
-#             ],
-#         )
-
-#     def test_pdf_boolean_has_dismissed(self, pdf: PDF):
-#         assert_pdf_boolean_field(
-#             pdf,
-#             "has_dismissed",
-#             [
-#                 "(record of citation or charge that was dismissedacquitted)",
-#                 "(an accusatory instrument was filed and I was acquitted or the case was dismissed)",
-#             ],
-#         )
-
-#     def test_pdf_boolean_has_contempt_of_court(self, pdf: PDF):
-#         assert_pdf_boolean_field(pdf, "has_contempt_of_court", ["(contempt of court finding)"])
-
-#     def test_pdf_boolean_has_class_b_felony(self, pdf: PDF):
-#         assert_pdf_boolean_field(
-#             pdf,
-#             "has_class_b_felony",
-#             [
-#                 "(Felony  Class B and)",
-#                 "(7 years have passed since the later of the convictionjudgment or release date and)",
-#                 "(I have not been convicted of any other offense or found guilty except for insanity in)",
-#             ],
-#         )
-
-#     def test_pdf_boolean_has_class_c_felony(self, pdf: PDF):
-#         assert_pdf_boolean_field(
-#             pdf,
-#             "has_class_c_felony",
-#             [
-#                 "(Felony  Class C and)",
-#                 "(5 years have passed since the later of the convictionjudgment or release date and)",
-#                 "(I have not been convicted of any other offense or found guilty except for insanity in_2)",
-#             ],
-#         )
-
-#     def test_pdf_boolean_has_class_a_misdemeanor(self, pdf: PDF):
-#         assert_pdf_boolean_field(
-#             pdf,
-#             "has_class_a_misdemeanor",
-#             [
-#                 "(Misdemeanor  Class A and)",
-#                 "(3 years have passed since the later of the convictionjudgment or release date and)",
-#                 "(I have not been convicted of any other offense or found guilty except for insanity in_3)",
-#             ],
-#         )
-
-#     def test_pdf_boolean_has_class_bc_misdemeanor(self, pdf: PDF):
-#         assert_pdf_boolean_field(
-#             pdf,
-#             "has_class_bc_misdemeanor",
-#             [
-#                 "(Misdemeanor  Class B or C and)",
-#                 "(1 year has passed since the later of the convictionfindingjudgment or release)",
-#                 "(I have not been convicted of any other offense or found guilty except for insanity)",
-#             ],
-#         )
-
-#     def test_pdf_boolean_has_violation_or_contempt_of_court(self, pdf: PDF):
-#         assert_pdf_boolean_field(
-#             pdf,
-#             "has_violation_or_contempt_of_court",
-#             [
-#                 "(Violation or Contempt of Court and)",
-#                 "(1 year has passed since the later of the convictionfindingjudgment or release_2)",
-#                 "(I have not been convicted of any other offense or found guilty except for insanity_2)",
-#             ],
-#         )
-
-#     def test_pdf_boolean_has_probation_revoked(self, pdf: PDF):
-#         assert_pdf_boolean_field(
-#             pdf,
-#             "has_probation_revoked",
-#             [
-#                 "(I was sentenced to probation in this case and)",
-#                 "(My probation WAS revoked and 3 years have passed since the date of revocation)",
-#             ],
-#         )
-
-#     def test_font_size_is_not_decreased_when_not_needed_for_date_of_arrest(self, pdf: PDF):
-#         form_data = {"arrest_dates_all": "Oct 22, 1999; Dec 19, 2020; Jan 22, 2021"}
-
-#         pdf.update_annotations(form_data)
-
-#         font_string = [annotation.DA for annotation in pdf.annotations if annotation.T == "(Date of arrest)"][0]
-#         assert font_string == "(/TimesNewRoman 10 Tf 0 g)"
-
-
-# class TestOregonWithConvictionOrderPDF:
-#     filename = "oregon_with_conviction_order"
-#     other_field_names = TestOregonPDF.get_all_field_names()
-#     form_speficic_fields = {
-#         "(County)": "",
-#         "(Case Number)": "",
-#         "(Case Name)": "",
-#         "(Arrest Dates All)": "",
-#         "(Charges All)": "",
-#         "(Conviction Dates)": "",
-#         "(Conviction Charges)": "",
-#         "(Arresting Agency1)": "",
-#     }
-#     form_data = {
-#         "sid": "new sid",
-#         "has_no_complaint": True,
-#         "county": "old county",
-#         "case_number": "old number",
-#         "case_name": "old case_name",
-#         "arrest_dates_all": "old arrest_dates_all",
-#         "charges_all": "old charges_all",
-#         "arresting_agency": "old arresting_agency",
-#         "conviction_dates": "old conviction_dates",
-#         "conviction_charges": "old conviction_charges",
-#     }
-#     expected_pdf_fields = {
-#         "(SID)": "new sid",
-#         "(record of arrest with no charges filed)": PDF.BUTTON_ON,
-#         "(no accusatory instrument was filed and at least 60 days have passed since the)": PDF.BUTTON_ON,
-#         "(County)": "old county",
-#         "(Case Number)": "old number",
-#         "(Case Name)": "old case_name",
-#         "(Arrest Dates All)": "old arrest_dates_all",
-#         "(Charges All)": "old charges_all",
-#         "(Conviction Dates)": "old conviction_dates",
-#         "(Conviction Charges)": "old conviction_charges",
-#     }
-
-#     @pytest.fixture
-#     def pdf(self) -> PDF:
-#         return PDF(self.filename, self.form_data, {"assert_blank_pdf": True})
-
-#     @pytest.fixture
-#     def all_field_names(self):
-#         form_specific_field_names = set(key for key in self.form_speficic_fields.keys())
-#         return form_specific_field_names.union(self.other_field_names)
-
-#     def test_all_fields_are_accounted_for(self, pdf: PDF, all_field_names: set):
-#         assert set(pdf.get_field_dict().keys()) == all_field_names
-#         assert set(anot.T for anot in pdf.annotations if anot.T) == all_field_names
-
-#     def test_both_old_and_new_fields_are_updated(self, pdf: PDF):
-#         pdf.update_annotations()
-#         assert_pdf_values(pdf, self.expected_pdf_fields)
-
-
-# class TestOregonWithArrestOrderPDF(TestOregonWithConvictionOrderPDF):
-#     filename = "oregon_with_arrest_order"
-#     form_speficic_fields = {
-#         "(County)": "",
-#         "(Case Number)": "",
-#         "(Case Name)": "",
-#         "(Dismissed Arrest Dates)": "",
-#         "(Dismissed Charges)": "",
-#         "(Dismissed Dates)": "",
-#         "(Arresting Agency1)": "",
-#     }
-#     form_data = {
-#         "sid": "new sid",
-#         "has_no_complaint": True,
-#         "county": "old county",
-#         "case_number": "old number",
-#         "case_name": "old case_name",
-#         "arrest_dates_all": "old arrest_dates_all",
-#         "charges_all": "old charges_all",
-#         "dismissed_arrest_dates": "old dismissed_arrest_dates",
-#         "dismissed_charges": "old dismissed_charges",
-#         "dismissed_dates": "old dismissed_dates",
-#     }
-#     expected_pdf_fields = {
-#         "(SID)": "new sid",
-#         "(record of arrest with no charges filed)": PDF.BUTTON_ON,
-#         "(no accusatory instrument was filed and at least 60 days have passed since the)": PDF.BUTTON_ON,
-#         "(County)": "old county",
-#         "(Case Number)": "old number",
-#         "(Case Name)": "old case_name",
-#         "(Dismissed Arrest Dates)": "old dismissed_arrest_dates",
-#         "(Dismissed Charges)": "old dismissed_charges",
-#         "(Dismissed Dates)": "old dismissed_dates",
-#     }
-
-
-# class TestMultnomahWithArrestPDF(TestOregonWithConvictionOrderPDF):
-#     filename = "multnomah_arrest"
-#     other_field_names = set()
-#     form_speficic_fields = {
-#         "(Case Name)": "",
-#         "(Case Number)": "",
-#         "(DA Number)": "",
-#         "(Full Name)": "",
-#         "(Date of Birth)": "",
-#         "(Mailing Address)": "",
-#         "(Phone Number)": "",
-#         "(City)": "",
-#         "(State)": "",
-#         "(Zip Code)": "",
-#         "(Arresting Agency)": "",
-#         "(Dismissed Arrest Dates)": "",
-#         "(Dismissed Charges)": "",
-#         "(I Full Name)": "",
-#     }
-#     form_data = {
-#         "case_name": "old case_name",
-#         "case_number": "old case_number",
-#         "da_number": "old da_number",
-#         "full_name": "old full_name",
-#         "date_of_birth": "old date_of_birth",
-#         "mailing_address": "old mailing_address",
-#         "phone_number": "old phone_number",
-#         "city": "old city",
-#         "state": "old state",
-#         "zip_code": "old zip_code",
-#         "arresting_agency": "old arresting_agency",
-#         "dismissed_arrest_dates": "old dismissed_arrest_dates",
-#         "dismissed_charges": "old dismissed_charges",
-#         "i_full_name": "old full_name",
-#     }
-#     expected_pdf_fields = {
-#         "(Case Name)": "old case_name",
-#         "(Case Number)": "old case_number",
-#         "(DA Number)": "old da_number",
-#         "(Full Name)": "old full_name",
-#         "(Date of Birth)": "old date_of_birth",
-#         "(Mailing Address)": "old mailing_address",
-#         "(Phone Number)": "old phone_number",
-#         "(City)": "old city",
-#         "(State)": "old state",
-#         "(Zip Code)": "old zip_code",
-#         "(Arresting Agency)": "old arresting_agency",
-#         "(Dismissed Arrest Dates)": "old dismissed_arrest_dates",
-#         "(Dismissed Charges)": "old dismissed_charges",
-#         "(I Full Name)": "old full_name",
-#     }
-
-
-# class TestMultnomahWithConvictionPDF(TestOregonWithConvictionOrderPDF):
-#     filename = "multnomah_conviction"
-#     other_field_names = set()
-#     form_speficic_fields = {
-#         "(Case Name)": "",
-#         "(Case Number)": "",
-#         "(DA Number)": "",
-#         "(Full Name)": "",
-#         "(Date of Birth)": "",
-#         "(Mailing Address)": "",
-#         "(Phone Number)": "",
-#         "(City)": "",
-#         "(State)": "",
-#         "(Zip Code)": "",
-#         "(Arresting Agency)": "",
-#         "(Arrest Dates All)": "",
-#         "(Conviction Dates)": "",
-#         "(Conviction Charges)": "",
-#         "(I Full Name)": "",
-#     }
-#     form_data = {
-#         "case_name": "old case_name",
-#         "case_number": "old case_number",
-#         "da_number": "old da_number",
-#         "full_name": "old full_name",
-#         "date_of_birth": "old date_of_birth",
-#         "mailing_address": "old mailing_address",
-#         "phone_number": "old phone_number",
-#         "city": "old city",
-#         "state": "old state",
-#         "zip_code": "old zip_code",
-#         "arresting_agency": "old arresting_agency",
-#         "arrest_dates_all": "old arrest_dates_all",
-#         "conviction_dates": "old conviction_dates",
-#         "conviction_charges": "old conviction_charges",
-#     }
-#     expected_pdf_fields = {
-#         "(Case Name)": "old case_name",
-#         "(Case Number)": "old case_number",
-#         "(DA Number)": "old da_number",
-#         "(Full Name)": "old full_name",
-#         "(Date of Birth)": "old date_of_birth",
-#         "(Mailing Address)": "old mailing_address",
-#         "(Phone Number)": "old phone_number",
-#         "(City)": "old city",
-#         "(State)": "old state",
-#         "(Zip Code)": "old zip_code",
-#         "(Arresting Agency)": "old arresting_agency",
-#         "(Arrest Dates All)": "old arrest_dates_all",
-#         "(Conviction Dates)": "old conviction_dates",
-#         "(Conviction Charges)": "old conviction_charges",
-#         "(I Full Name)": "old full_name",
-#     }
-
-
-# class TestOSPPDF(TestOregonWithConvictionOrderPDF):
-#     filename = "OSP_FORM"
-#     other_field_names = set()
-#     form_speficic_fields = {
-#         "(Full Name)": "",
-#         "(Date of Birth)": "",
-#         "(Mailing Address)": "",
-#         "(Phone Number)": "",
-#         "(City)": "",
-#         "(State)": "",
-#         "(Zip Code)": "",
-#     }
-#     form_data = {
-#         "full_name": "old full_name",
-#         "date_of_birth": "old date_of_birth",
-#         "mailing_address": "old mailing_address",
-#         "phone_number": "old phone_number",
-#         "city": "old city",
-#         "state": "old state",
-#         "zip_code": "old zip_code",
-#     }
-#     expected_pdf_fields = {
-#         "(Full Name)": "old full_name",
-#         "(Date of Birth)": "old date_of_birth",
-#         "(Mailing Address)": "old mailing_address",
-#         "(Phone Number)": "old phone_number",
-#         "(City)": "old city",
-#         "(State)": "old state",
-#         "(Zip Code)": "old zip_code",
-#     }
-
-
 #########################################
 
 
-class TestBuildPDFForEligibleCaseOregon:
-    base_case_expected_values = {
+class TestBuildOSPPDF:
+    def test_user_info_is_placed_in_osp_form(self):
+        user_data = {
+            "full_name": "foo bar",
+            "date_of_birth": "1/2/1999",
+            "mailing_address": "1234 NE Dev St. #12",
+            "city": "Portland",
+            "state": "OR",
+            "zip_code": "97111",
+            "phone_number": "555-555-1234",
+        }
+        expected_values = {
+            "(Full Name)": "(foo bar)",
+            "(Date of Birth)": "(1/2/1999)",
+            "(Phone Number)": "(555-555-1234)",
+            "(Mailing Address)": "(1234 NE Dev St. #12)",
+            "(City)": "(Portland)",
+            "(State)": "(OR)",
+            "(Zip Code)": "(97111)",
+        }
+        user_info = from_dict(data_class=UserInfo, data=user_data)
+        pdf = FormFilling._build_pdf(user_info, validate_initial_pdf_state=True)
+        assert_pdf_values(pdf, expected_values, {"assert_other_fields_empty": True, "paren_values": True})
+
+
+class TestBuildOregonPDF:
+    user_data = {
+        "full_name": "foo bar",
+        "date_of_birth": "1/2/1999",
+        "mailing_address": "1234 NE Dev St. #12",
+        "city": "Portland",
+        "state": "OR",
+        "zip_code": "97111",
+        "phone_number": "555-555-1234",
+    }
+    expected_base_values = {
+        # county
         "(FOR THE COUNTY OF)": "(Washington)",
+        # constant
         "(Plaintiff)": "(State of Oregon)",
-        "(Case No)": "(base case number with comments \(charge  only\))",  # backslashes don't show in PDFs
+        # case_name
         "(Defendant)": "(Case Name 0)",
+        # date_of_birth
         "(DOB)": "(1/2/1999)",
-        "(SID)": "(sid 0)",
+        # sid
+        "(SID)": "(sid0)",
+        # True
         "(I am not currently charged with a crime)": "/On",
         "(The arrest or citation I want to set aside is not for a charge of Driving Under the Influence of)": "/On",
+        # arrest_dates
         "(Date of arrest)": "(Feb 3, 2020)",
+        # True
         "(have sent)": "/On",
+        # full_name
         "(Name typed or printed)": "(foo bar)",
+        # mailing_address, city, state, zip_code, phone_number
         "(Address)": "(1234 NE Dev St. #12,    Portland,    OR,    97111,    555-555-1234)",
+        # da_address
         "(the District Attorney at address 2)": "(District Attorney - 150 N First Avenue, Suite 300 - Hillsboro, OR 97124-3002)",
-        "(Name typed or printed_2)": "(foo bar)",    
+        # full_name
+        "(Name typed or printed_2)": "(foo bar)",
     }
-    base_case_checkbox_values = {
+    expected_conviction_values = {
+        # case_number_with_comments
+        "(Case No)": "(base case number)",
+        # not has_no_complaint
         "(record of arrest with charges filed and the associated check all that apply)": "/On",
+        # conviction_dates
+        "(Date of conviction contempt finding or judgment of GEI)": "(Dec 3, 1999)",
+        # has_conviction
+        "(conviction)": "/On",
+        "(ORS 137225 does not prohibit a setaside of this conviction see Instructions)": "/On",
+        "(I have fully completed complied with or performed all terms of the sentence of the court)": "/On",
+    }
+    expected_violation_values = {
+        # has_violation_or_contempt_of_court
+        "(Violation or Contempt of Court and)": "/On",
+        "(1 year has passed since the later of the convictionfindingjudgment or release_2)": "/On",
+        "(I have not been convicted of any other offense or found guilty except for insanity_2)": "/On",
     }
 
     @pytest.fixture
-    def base_charge(self) -> Charge:
+    def user_info(self):
+        return from_dict(data_class=UserInfo, data=self.user_data)
+
+    @pytest.fixture
+    def charge(self) -> Charge:
         charge = Mock(spec=Charge)
         charge.date = DateWithFuture.fromdatetime(datetime(2020, 2, 3))
         charge.name = "a bad thing"
-        charge.disposition = Mock()
-        charge.disposition.date = DateWithFuture.fromdatetime(datetime(2020, 3, 4))
-        charge.charge_type = Mock()
+        charge.edit_status = "not delete"
         return charge
 
     @pytest.fixture
-    def base_case(self, base_charge) -> Case:
+    def conviction_charge(self, charge) -> Charge:
+        charge.expungement_result.charge_eligibility.status = ChargeEligibilityStatus.ELIGIBLE_NOW
+        charge.charge_type = FelonyClassB()
+        charge.disposition = Mock()
+        charge.disposition.date = DateWithFuture.fromdatetime(datetime(1999, 12, 3))
+        charge.convicted.return_value = True
+        charge.dismissed.return_value = False
+        charge.probation_revoked = False
+        return charge
+
+    @pytest.fixture
+    def case(self, charge) -> Case:
         case = Mock(spec=Case)
         case.summary = Mock(autospec=True)
         case.summary.balance_due_in_cents = 0
         case.summary.location = "Washington"
         case.summary.name = "Case Name 0"
         case.summary.district_attorney_number = "DA num 0"
-        case.summary.case_number = "base case number with comments"
-        case.charges = [base_charge]
+        case.summary.case_number = "base case number"
+        case.charges = [charge]
         return case
 
     @pytest.fixture
-    def pdf_factory(self, base_case, base_charge):
-        def factory(
-            case: Case = base_case,
-            user_information: Dict[str, str] = None,
-            sid: str = "sid 0",
-        ):
-            if user_information is None:
-                user_information = {
-                    "full_name": "foo bar",
-                    "date_of_birth": "1/2/1999",
-                    "mailing_address": "1234 NE Dev St. #12",
-                    "city": "Portland",
-                    "state": "OR",
-                    "zip_code": "97111",
-                    "phone_number": "555-555-1234",
-                }
-
-            user_info = from_dict(data_class=UserInfo, data=user_information)
-
-            _, pdf = FormFilling._build_pdf_for_eligible_case(
-                case, user_info, sid
-            )
-            return pdf
+    def pdf(self, case, user_info):
+        def factory(charges: List[Charge]) -> PDF:
+            case.charges = charges
+            case_results = CaseResults.build(case, user_info, sid="sid0")
+            return FormFilling._build_pdf(case_results, validate_initial_pdf_state=True)
 
         return factory
 
-    def assert_pdf_values(self, pdf: PDF, expected_values):
-        all_expected_values = {**self.base_case_expected_values, **expected_values}
+    def assert_pdf_values(self, pdf: PDF, new_expected_values):
+        all_expected_values = {**self.expected_base_values, **new_expected_values}
         assert_pdf_values(pdf, all_expected_values, {"assert_other_fields_empty": True, "paren_values": True})
 
     ############# tests #############
 
-    # def test_base_case(self, pdf_factory):
-    #     pdf = pdf_factory()
-    #     # pdf.write("foo_test.pdf")
-    #     self.assert_pdf_values(pdf, {**self.base_case_expected_values, **self.base_case_checkbox_values})
+    def test_oregon_base_case(self, case, user_info):
+        new_expected_values = {
+            # case_number_with_comments
+            "(Case No)": "(base case number \\(charge  only\\))",
+            # not has_no_complaint
+            "(record of arrest with charges filed and the associated check all that apply)": "/On",
+        }
+        case_results = CaseResults.build(case, user_info, sid="sid0")
+        pdf = FormFilling._build_pdf(case_results)
+        self.assert_pdf_values(pdf, new_expected_values)
 
-    # def test_has_contempt(self, pdf_factory, base_case: Case, base_charge: Charge):
-    #     base_charge.expungement_result.charge_eligibility.status = ChargeEligibilityStatus.ELIGIBLE_NOW
-    #     base_case.charges = [base_charge]
+    def test_has_no_complaint_has_dismissed(self, charge: Charge, pdf: PDF):
+        new_expected_values = {
+            # has_no_complaint
+            "(record of arrest with no charges filed)": "/On",
+            "(no accusatory instrument was filed and at least 60 days have passed since the)": "/On",
+            # has_dismissed
+            "(an accusatory instrument was filed and I was acquitted or the case was dismissed)": "/On",
+            "(record of citation or charge that was dismissedacquitted)": "/On",
+            # case_number_with_comments
+            "(Case No)": "(base case number)",
+        }
+        charge.expungement_result.charge_eligibility.status = ChargeEligibilityStatus.ELIGIBLE_NOW
+        charge.charge_type = Mock()
+        charge.disposition = Mock()
+        self.assert_pdf_values(pdf([charge]), new_expected_values)
 
-    #     pdf = pdf_factory(case=base_case)
-    #     expected_values = {
-    #         **self.base_case_expected_values,
-    #         "(contempt of court finding)": "/On",
-    #     }
+    ##### conviction #####
 
-    #     self.assert_pdf_values(pdf, expected_values)
+    def test_has_probation_revoked(self, conviction_charge: Charge, pdf: PDF):
+        new_expected_values = {
+            "(I was sentenced to probation in this case and)": "/On",
+            "(My probation WAS revoked and 3 years have passed since the date of revocation)": "/On",
+        }
+        conviction_charge.charge_type = Mock()
+        conviction_charge.probation_revoked = True
+        self.assert_pdf_values(pdf([conviction_charge]), {**self.expected_conviction_values, **new_expected_values})
 
-    # def test_has_felony_b(self, pdf_factory, base_case: Case, base_charge: Charge):
-    #     base_charge.charge_type = FelonyClassB()
-    #     base_charge.convicted.return_value = True
-    #     base_charge.dismissed.return_value = False
-    #     base_charge.probation_revoked = False
-    #     pdf = pdf_factory(case=base_case, eligible_charges=[base_charge])
-    #     expected_values = {
-    #         # has_no_complaint
-    #         "(record of arrest with charges filed and the associated check all that apply)": "/On",
-    #         # has_conviction
-    #         "(conviction)": "/On",
-    #         "(ORS 137225 does not prohibit a setaside of this conviction see Instructions)": "/On",
-    #         "(I have fully completed complied with or performed all terms of the sentence of the court)": "/On",
-    #         # conviction_dates
-    #         "(Date of conviction contempt finding or judgment of GEI)": "Mar 4, 2020",
-    #         # has_class_b_felony
-    #         "(Felony  Class B and)": "/On",
-    #         "(7 years have passed since the later of the convictionjudgment or release date and)": "/On",
-    #         "(I have not been convicted of any other offense or found guilty except for insanity in)": "/On",
-    #         # arrest_dates_all
-    #         "(Date of arrest)": "Feb 3, 2020",
-    #     }
+    def test_has_class_b_felony(self, conviction_charge: Charge, pdf: PDF):
+        new_expected_values = {
+            "(Felony  Class B and)": "/On",
+            "(7 years have passed since the later of the convictionjudgment or release date and)": "/On",
+            "(I have not been convicted of any other offense or found guilty except for insanity in)": "/On",
+        }
+        conviction_charge.charge_type = FelonyClassB()
+        self.assert_pdf_values(pdf([conviction_charge]), {**self.expected_conviction_values, **new_expected_values})
 
-    #     self.assert_pdf_values(pdf, expected_values)
+    def test_has_class_c_felony(self, conviction_charge: Charge, pdf: PDF):
+        new_expected_values = {
+            "(Felony  Class C and)": "/On",
+            "(5 years have passed since the later of the convictionjudgment or release date and)": "/On",
+            "(I have not been convicted of any other offense or found guilty except for insanity in_2)": "/On",
+        }
+        conviction_charge.charge_type = FelonyClassC()
+        self.assert_pdf_values(pdf([conviction_charge]), {**self.expected_conviction_values, **new_expected_values})
 
-#     def test_has_misdemeanor_bc(self, pdf_factory, base_case: Case, base_charge: Charge):
-#         base_charge.charge_type = MisdemeanorClassBC()
-#         base_charge.convicted.return_value = True
-#         base_charge.dismissed.return_value = False
-#         base_charge.probation_revoked = False
-#         pdf = pdf_factory(case=base_case, eligible_charges=[base_charge])
-#         expected_values = {
-#             # has_class_bc_misdemeanor
-#             "(Misdemeanor  Class B or C and)": "/On",
-#             "(1 year has passed since the later of the convictionfindingjudgment or release)": "/On",
-#             "(I have not been convicted of any other offense or found guilty except for insanity)": "/On",
-#             # has_no_complaint
-#             "(record of arrest with charges filed and the associated check all that apply)": "/On",
-#             # has_conviction
-#             "(conviction)": "/On",
-#             "(ORS 137225 does not prohibit a setaside of this conviction see Instructions)": "/On",
-#             "(I have fully completed complied with or performed all terms of the sentence of the court)": "/On",
-#             # conviction_dates
-#             "(Date of conviction contempt finding or judgment of GEI)": "Mar 4, 2020",
-#             # arrest_dates_all
-#             "(Date of arrest)": "Feb 3, 2020",
-#         }
+    def test_has_class_a_misdeanor(self, conviction_charge: Charge, pdf: PDF):
+        new_expected_values = {
+            "(Misdemeanor  Class A and)": "/On",
+            "(3 years have passed since the later of the convictionjudgment or release date and)": "/On",
+            "(I have not been convicted of any other offense or found guilty except for insanity in_3)": "/On",
+        }
+        conviction_charge.charge_type = MisdemeanorClassA()
+        self.assert_pdf_values(pdf([conviction_charge]), {**self.expected_conviction_values, **new_expected_values})
 
-#         self.assert_pdf_values(pdf, expected_values)
+    def test_has_class_bc_misdeanor(self, conviction_charge: Charge, pdf: PDF):
+        new_expected_values = {
+            "(Misdemeanor  Class B or C and)": "/On",
+            "(1 year has passed since the later of the convictionfindingjudgment or release)": "/On",
+            "(I have not been convicted of any other offense or found guilty except for insanity)": "/On",
+        }
+        conviction_charge.charge_type = MisdemeanorClassBC()
+        self.assert_pdf_values(pdf([conviction_charge]), {**self.expected_conviction_values, **new_expected_values})
 
-# #         # for k, v in pdf.get_field_dict().items():
-# #         #     print(f'"{k}": "{v}",')
+    def test_has_violation(self, conviction_charge: Charge, pdf: PDF):
+        for charge_type in [Violation, ReducedToViolation, MarijuanaViolation]:
+            conviction_charge.charge_type = charge_type()
+            self.assert_pdf_values(
+                pdf([conviction_charge]), {**self.expected_conviction_values, **self.expected_violation_values}
+            )
+
+    def test_has_contempt_of_court(self, conviction_charge: Charge, pdf: PDF):
+        new_expected_values = {
+            "(contempt of court finding)": "/On",
+        }
+        conviction_charge.charge_type = ContemptOfCourt()
+        all_expected_values = {
+            **self.expected_conviction_values,
+            **self.expected_violation_values,
+            **new_expected_values,
+        }
+        self.assert_pdf_values(pdf([conviction_charge]), all_expected_values)
+
+    ##### charge.charge_type.severity_level #####
+
+    def test_has_felony_class_c_severity_level(self, conviction_charge: Charge, pdf: PDF):
+        new_expected_values = {
+            "(Felony  Class C and)": "/On",
+            "(5 years have passed since the later of the convictionjudgment or release date and)": "/On",
+            "(I have not been convicted of any other offense or found guilty except for insanity in_2)": "/On",
+        }
+        conviction_charge.charge_type = Mock()
+        conviction_charge.charge_type.severity_level = "Felony Class C"
+        self.assert_pdf_values(pdf([conviction_charge]), {**self.expected_conviction_values, **new_expected_values})
+
+    def test_has_misdemeanor_class_a_severity_level(self, conviction_charge: Charge, pdf: PDF):
+        new_expected_values = {
+            "(Misdemeanor  Class A and)": "/On",
+            "(3 years have passed since the later of the convictionjudgment or release date and)": "/On",
+            "(I have not been convicted of any other offense or found guilty except for insanity in_3)": "/On",
+        }
+        conviction_charge.charge_type = Mock()
+        conviction_charge.charge_type.severity_level = "Misdemeanor Class A"
+        self.assert_pdf_values(pdf([conviction_charge]), {**self.expected_conviction_values, **new_expected_values})
+
+        # for k, v in pdf.get_field_dict().items():
+        #     print(f'"{k}": "{v}",')
+
+
+# TODO test multiple case.charges generate joined values
