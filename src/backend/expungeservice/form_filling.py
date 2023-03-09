@@ -373,7 +373,6 @@ class PDFFieldMapper(UserDict):
             # "(Date_2)"
             # "(Signature_2)"
             "(Name typed or printed_2)": s.full_name,
-
             # The following fields are additional fields from oregon_with_conviction_order.pdf.
             "(County)": s.county,
             "(Case Number)": s.case_number_with_comments,
@@ -383,7 +382,6 @@ class PDFFieldMapper(UserDict):
             # "(Arresting Agency)": s.arresting_agency,
             "(Conviction Dates)": s.conviction_dates,
             "(Conviction Charges)": s.conviction_names,
-
             # The following fields are additional fields from oregon_with_arrest_order.pdf.
             "(Dismissed Arrest Dates)": s.dismissed_arrest_dates,
             "(Dismissed Charges)": s.dismissed_names,
@@ -612,7 +610,7 @@ class FormFilling:
             file_name = "multnomah" if county == "multnomah" else "oregon"
 
             if county in ["douglas", "umatilla", "multnomah"]:
-                    file_name += "_conviction" if source_data.has_conviction else "_arrest"
+                file_name += "_conviction" if source_data.has_conviction else "_arrest"
         else:
             file_name = "osp"
 
