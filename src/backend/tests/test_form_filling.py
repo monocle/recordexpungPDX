@@ -77,7 +77,7 @@ class TestJohnCommonIntegration:
     @patch("expungeservice.form_filling.mkdtemp")
     def test_form_fields_are_filled(self, mock_mkdtemp, MockZipFile, MockPdfWriter, mock_get_pdf_file_name):
         mock_mkdtemp.return_value = "foo"
-        mock_get_pdf_file_name.side_effect = [self.filename, self.filename, self.filename, "OSP_Form.pdf"]
+        mock_get_pdf_file_name.side_effect = [self.filename, self.filename, self.filename, "osp.pdf"]
 
         user_information = {
             "full_name": "John FullName Common",
@@ -128,12 +128,12 @@ class TestJohnCommonIntegration:
 
 
 class TestJohnCommonArrestIntegration(TestJohnCommonIntegration):
-    filename = "oregon_with_arrest_order.pdf"
+    filename = "oregon_arrest.pdf"
     expected_form_values = oregon_arrest_john_common_pdf_fields
 
 
 class TestJohnCommonConvictionIntegration(TestJohnCommonIntegration):
-    filename = "oregon_with_conviction_order.pdf"
+    filename = "oregon_conviction.pdf"
     expected_form_values = oregon_conviction_john_common_pdf_fields
 
 
@@ -167,7 +167,7 @@ class TestPDFFileNameAndDownloadPath:
 
         assert file_name == expected_file_name
 
-    def assert_correct_file_path(self, county: str, expected_file_name: str, has_convictions: bool):
+    def assert_correct_download_file_path(self, county: str, expected_file_name: str, has_convictions: bool):
         res = self.mock_case_results(county, has_convictions)
         file_path, file_name = FormFilling._build_download_file_path("dir", res)
 
@@ -175,27 +175,33 @@ class TestPDFFileNameAndDownloadPath:
         assert file_path == "dir/case_name_case_number_" + expected_file_name
 
     def test_correct_pdf_path_is_built(self):
-        self.assert_correct_pdf_file_name("Douglas", FormFilling.OREGON_ARREST_PDF_NAME, has_convictions=False)
-        self.assert_correct_pdf_file_name("Douglas", FormFilling.OREGON_CONVICTION_PDF_NAME, has_convictions=True)
+        self.assert_correct_pdf_file_name("Douglas", "oregon_arrest.pdf", has_convictions=False)
+        self.assert_correct_pdf_file_name("Douglas", "oregon_conviction.pdf", has_convictions=True)
 
-        self.assert_correct_pdf_file_name("Umatilla", FormFilling.OREGON_ARREST_PDF_NAME, has_convictions=False)
-        self.assert_correct_pdf_file_name("Umatilla", FormFilling.OREGON_CONVICTION_PDF_NAME, has_convictions=True)
+        self.assert_correct_pdf_file_name("Umatilla", "oregon_arrest.pdf", has_convictions=False)
+        self.assert_correct_pdf_file_name("Umatilla", "oregon_conviction.pdf", has_convictions=True)
 
-        self.assert_correct_pdf_file_name("Multnomah", FormFilling.MULTNOMAH_ARREST_PDF_NAME, has_convictions=False)
-        self.assert_correct_pdf_file_name("Multnomah", FormFilling.MULTNOMAH_CONVICTION_PDF_NAME, has_convictions=True)
+        self.assert_correct_pdf_file_name("Multnomah", "multnomah_arrest.pdf", has_convictions=False)
+        self.assert_correct_pdf_file_name("Multnomah", "multnomah_conviction.pdf", has_convictions=True)
 
-        self.assert_correct_pdf_file_name("unknown", FormFilling.DEFAULT_PDF_NAME, has_convictions=False)
-        self.assert_correct_pdf_file_name("unknown", FormFilling.DEFAULT_PDF_NAME, has_convictions=True)
+        self.assert_correct_pdf_file_name("unknown", "oregon.pdf", has_convictions=False)
+        self.assert_correct_pdf_file_name("unknown", "oregon.pdf", has_convictions=True)
 
-    def test_correct_file_path_is_built(self):
-        self.assert_correct_file_path("Douglas", "douglas_with_arrest_order.pdf", has_convictions=False)
-        self.assert_correct_file_path("Douglas", "douglas_with_conviction_order.pdf", has_convictions=True)
+    def test_correct_download_file_path_is_built(self):
+        self.assert_correct_download_file_path("Douglas", "douglas_with_arrest_order.pdf", has_convictions=False)
+        self.assert_correct_download_file_path("Douglas", "douglas_with_conviction_order.pdf", has_convictions=True)
 
-        self.assert_correct_file_path("Umatilla", "umatilla_with_arrest_order.pdf", has_convictions=False)
-        self.assert_correct_file_path("Umatilla", "umatilla_with_conviction_order.pdf", has_convictions=True)
+        self.assert_correct_download_file_path("Umatilla", "umatilla_with_arrest_order.pdf", has_convictions=False)
+        self.assert_correct_download_file_path("Umatilla", "umatilla_with_conviction_order.pdf", has_convictions=True)
 
-        self.assert_correct_file_path("Other", "other.pdf", has_convictions=False)
-        self.assert_correct_file_path("Other", "other.pdf", has_convictions=True)
+        self.assert_correct_download_file_path("Other", "other.pdf", has_convictions=False)
+        self.assert_correct_download_file_path("Other", "other.pdf", has_convictions=True)
+
+        mock_user_info = Mock()
+        file_path, file_name = FormFilling._build_download_file_path("dir", mock_user_info)
+
+        assert file_name == "OSP_Form.pdf"
+        assert file_path == "dir/OSP_Form.pdf"
 
 
 #########################################

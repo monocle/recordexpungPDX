@@ -373,6 +373,7 @@ class PDFFieldMapper(UserDict):
             # "(Date_2)"
             # "(Signature_2)"
             "(Name typed or printed_2)": s.full_name,
+
             # The following fields are additional fields from oregon_with_conviction_order.pdf.
             "(County)": s.county,
             "(Case Number)": s.case_number_with_comments,
@@ -382,6 +383,7 @@ class PDFFieldMapper(UserDict):
             # "(Arresting Agency)": s.arresting_agency,
             "(Conviction Dates)": s.conviction_dates,
             "(Conviction Charges)": s.conviction_names,
+
             # The following fields are additional fields from oregon_with_arrest_order.pdf.
             "(Dismissed Arrest Dates)": s.dismissed_arrest_dates,
             "(Dismissed Charges)": s.dismissed_names,
@@ -533,21 +535,13 @@ class PDF:
 
 
 class FormFilling:
-    OREGON_ARREST_PDF_NAME = "oregon_with_arrest_order.pdf"
-    OREGON_CONVICTION_PDF_NAME = "oregon_with_conviction_order.pdf"
-    MULTNOMAH_ARREST_PDF_NAME = "multnomah_arrest.pdf"
-    MULTNOMAH_CONVICTION_PDF_NAME = "multnomah_conviction.pdf"
-    OSP_PDF_NAME = "OSP_Form.pdf"
-    DEFAULT_PDF_NAME = "oregon.pdf"
-    ZIP_FILE_NAME = "expungement_packet.zip"
-    BASE_DIR = path.join(Path(__file__).parent, "files")
-
     @staticmethod
     def build_zip(record_summary: RecordSummary, user_information_dict: Dict[str, str]) -> Tuple[str, str]:
         temp_dir = mkdtemp()
-        zip_dir = mkdtemp()
-        zip_path = path.join(zip_dir, FormFilling.ZIP_FILE_NAME)
-        zipfile = ZipFile(zip_path, "w")
+        zip_file_name = "expungement_packet.zip"
+        zip_path = path.join(mkdtemp(), zip_file_name)
+        zip_file = ZipFile(zip_path, "w")
+
         sid = FormFilling._unify_sids(record_summary)
 
         for case in record_summary.record.cases:
@@ -555,13 +549,13 @@ class FormFilling:
 
             if case_results.is_expungeable_now:
                 file_info = FormFilling._create_and_write_pdf(case_results, temp_dir, append=FormFilling._add_warnings)
-                zipfile.write(*file_info)
+                zip_file.write(*file_info)
 
         osp_file_info = FormFilling._create_and_write_pdf(user_information_dict, temp_dir)
-        zipfile.write(*osp_file_info)
-        zipfile.close()
+        zip_file.write(*osp_file_info)
+        zip_file.close()
 
-        return zip_path, FormFilling.ZIP_FILE_NAME
+        return zip_path, zip_file_name
 
     @staticmethod
     def _unify_sids(record_summary: RecordSummary) -> str:
@@ -597,49 +591,38 @@ class FormFilling:
 
     @staticmethod
     def _build_download_file_path(dir: str, source_data: Union[UserInfo, CaseResults]) -> Tuple[str, str]:
-        if not isinstance(source_data, CaseResults):
-            return path.join(dir, FormFilling.OSP_PDF_NAME), FormFilling.OSP_PDF_NAME
+        if isinstance(source_data, CaseResults):
+            base_name = source_data.county.lower()
 
-        county = source_data.county.lower()
-        # Douglas and Umatilla counties explicitly want the "Order" part of the old forms too.
-        if county in ["douglas", "umatilla"]:
-            if source_data.has_conviction:
-                base_name = county + "_with_conviction_order.pdf"
-            else:
-                base_name = county + "_with_arrest_order.pdf"
+            if base_name in ["douglas", "umatilla"]:
+                base_name += "_with_"
+                base_name += "conviction" if source_data.has_conviction else "arrest"
+                base_name += "_order"
+
+            file_name = f"{source_data.case_name}_{source_data.case_number}_{base_name}.pdf"
         else:
-            base_name = county + ".pdf"
-
-        file_name = f"{source_data.case_name}_{source_data.case_number}_{base_name}"
+            file_name = "OSP_Form.pdf"
 
         return path.join(dir, file_name), file_name
 
     @staticmethod
     def _get_pdf_file_name(source_data: Union[UserInfo, CaseResults]) -> str:
-        if not isinstance(source_data, CaseResults):
-            return FormFilling.OSP_PDF_NAME
+        if isinstance(source_data, CaseResults):
+            county = source_data.county.lower()
+            file_name = "multnomah" if county == "multnomah" else "oregon"
 
-        county = source_data.county.lower()
-       # Douglas and Umatilla counties explicitly want the "Order" part of the old forms too.
-        if county in ["douglas", "umatilla"]:
-            if source_data.has_conviction:
-                file_name = FormFilling.OREGON_CONVICTION_PDF_NAME
-            else:
-                file_name = FormFilling.OREGON_ARREST_PDF_NAME
-        elif county == "multnomah":
-            if source_data.has_conviction:
-                file_name = FormFilling.MULTNOMAH_CONVICTION_PDF_NAME
-            else:
-                file_name = FormFilling.MULTNOMAH_ARREST_PDF_NAME
+            if county in ["douglas", "umatilla", "multnomah"]:
+                    file_name += "_conviction" if source_data.has_conviction else "_arrest"
         else:
-            file_name = FormFilling.DEFAULT_PDF_NAME
+            file_name = "osp"
 
-        return file_name
+        return file_name + ".pdf"
 
     @staticmethod
     def _create_pdf(source_data: Union[UserInfo, CaseResults], validate_initial_pdf_state=False) -> PDF:
         file_name = FormFilling._get_pdf_file_name(source_data)
-        pdf_path = path.join(FormFilling.BASE_DIR, file_name)
+        dir = path.join(Path(__file__).parent, "files")
+        pdf_path = path.join(dir, file_name)
         mapper = PDFFieldMapper(pdf_path, source_data)
 
         return PDF.fill_form(mapper, validate_initial_pdf_state)
