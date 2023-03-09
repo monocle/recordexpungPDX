@@ -71,13 +71,13 @@ class TestJohnCommonIntegration:
     BASE_DIR = os.path.join(Path(__file__).parent.parent, "expungeservice", "files")
     expected_form_values = oregon_john_common_pdf_fields
 
-    @patch("expungeservice.form_filling.FormFilling._get_file_name_for_case")
+    @patch("expungeservice.form_filling.FormFilling._get_pdf_file_name")
     @patch("expungeservice.form_filling.PdfWriter", autospec=True)
     @patch("expungeservice.form_filling.ZipFile")
     @patch("expungeservice.form_filling.mkdtemp")
-    def test_form_fields_are_filled(self, mock_mkdtemp, MockZipFile, MockPdfWriter, mock_get_file_name_for_case):
+    def test_form_fields_are_filled(self, mock_mkdtemp, MockZipFile, MockPdfWriter, mock_get_pdf_file_name):
         mock_mkdtemp.return_value = "foo"
-        mock_get_file_name_for_case.return_value = self.filename
+        mock_get_pdf_file_name.side_effect = [self.filename, self.filename, self.filename, "OSP_Form.pdf"]
 
         user_information = {
             "full_name": "John FullName Common",
@@ -106,8 +106,8 @@ class TestJohnCommonIntegration:
                 for annotation in page.Annots or []:
                     assert self.expected_form_values[document_id][idx][annotation.T] == annotation.V, annotation.T
 
-        write_call_args_list = MockPdfWriter.return_value.write.call_args_list
-        file_paths = [write_call_args_list[i][0][0] for i, _ in enumerate(write_call_args_list)]
+        pdf_write_call_args_list = MockPdfWriter.return_value.write.call_args_list
+        file_paths = [pdf_write_call_args_list[i][0][0] for i, _ in enumerate(pdf_write_call_args_list)]
         expected_file_paths = [
             "foo/COMMON NAME_200000_benton.pdf",
             "foo/COMMON NAME_110000_baker.pdf",
@@ -115,6 +115,16 @@ class TestJohnCommonIntegration:
             "foo/OSP_Form.pdf",
         ]
         assert set(file_paths) == set(expected_file_paths)
+
+        zip_write_call_args_list = MockZipFile.return_value.write.call_args_list
+        zip_write_args = [zip_write_call_args_list[i][0] for i, _ in enumerate(zip_write_call_args_list)]
+        expected_zip_write_args = [
+            ("foo/COMMON NAME_200000_benton.pdf", "COMMON NAME_200000_benton.pdf"),
+            ("foo/COMMON NAME_110000_baker.pdf", "COMMON NAME_110000_baker.pdf"),
+            ("foo/COMMON A NAME_120000_baker.pdf", "COMMON A NAME_120000_baker.pdf"),
+            ("foo/OSP_Form.pdf", "OSP_Form.pdf"),
+        ]
+        assert set(zip_write_args) == set(expected_zip_write_args)
 
 
 class TestJohnCommonArrestIntegration(TestJohnCommonIntegration):
@@ -144,7 +154,7 @@ class TestPDFFileNameAndDownloadPath:
     dir_path = os.path.join(Path(__file__).parent.parent, "expungeservice", "files")
 
     def mock_case_results(self, county, has_convictions):
-        mock_case_results = Mock()
+        mock_case_results = Mock(spec=CaseResults)
         mock_case_results.county = county
         mock_case_results.case_name = "case_name"
         mock_case_results.case_number = "case_number"
@@ -153,13 +163,13 @@ class TestPDFFileNameAndDownloadPath:
 
     def assert_correct_pdf_file_name(self, county: str, expected_file_name: str, has_convictions: bool = True):
         res = self.mock_case_results(county, has_convictions)
-        file_name = FormFilling._get_file_name_for_case(res)
+        file_name = FormFilling._get_pdf_file_name(res)
 
         assert file_name == expected_file_name
 
     def assert_correct_file_path(self, county: str, expected_file_name: str, has_convictions: bool):
         res = self.mock_case_results(county, has_convictions)
-        file_name, file_path = FormFilling._build_download_file_path("dir", res)
+        file_path, file_name = FormFilling._build_download_file_path("dir", res)
 
         assert file_name == "case_name_case_number_" + expected_file_name
         assert file_path == "dir/case_name_case_number_" + expected_file_name
@@ -230,7 +240,7 @@ class TestBuildOSPPDF:
             "(Zip Code)": "(97111)",
         }
         user_info = from_dict(data_class=UserInfo, data=user_data)
-        pdf = FormFilling._build_pdf(user_info, validate_initial_pdf_state=True)
+        pdf = FormFilling._create_pdf(user_info, validate_initial_pdf_state=True)
         assert_pdf_values(pdf, expected_values)
 
 
@@ -291,10 +301,6 @@ class TestBuildOregonPDF:
     }
 
     @pytest.fixture
-    def user_info(self):
-        return from_dict(data_class=UserInfo, data=self.user_data)
-
-    @pytest.fixture
     def charge(self) -> Charge:
         charge = Mock(spec=Charge)
         charge.date = DateWithFuture.fromdatetime(datetime(2020, 2, 3))
@@ -326,11 +332,12 @@ class TestBuildOregonPDF:
         return case
 
     @pytest.fixture
-    def pdf(self, case, user_info):
+    def pdf(self, case):
         def factory(charges: List[Charge]) -> PDF:
             case.charges = charges
-            case_results = CaseResults.build(case, user_info, sid="sid0")
-            return FormFilling._build_pdf(case_results, validate_initial_pdf_state=True)
+            case_results = CaseResults.build(case, self.user_data, sid="sid0")
+            pdf = FormFilling._create_pdf(case_results, validate_initial_pdf_state=True)
+            return pdf
 
         return factory
 
@@ -340,15 +347,15 @@ class TestBuildOregonPDF:
 
     ############# tests #############
 
-    def test_oregon_base_case(self, case, user_info):
+    def test_oregon_base_case(self, case):
         new_expected_values = {
             # case_number_with_comments
             "(Case No)": "(base case number \\(charge  only\\))",
             # not has_no_complaint
             "(record of arrest with charges filed and the associated check all that apply)": "/On",
         }
-        case_results = CaseResults.build(case, user_info, sid="sid0")
-        pdf = FormFilling._build_pdf(case_results)
+        case_results = CaseResults.build(case, self.user_data, sid="sid0")
+        pdf = FormFilling._create_pdf(case_results)
         self.assert_pdf_values(pdf, new_expected_values)
 
     def test_has_no_complaint_has_dismissed(self, charge: Charge, pdf: PDF):
@@ -455,8 +462,7 @@ class TestBuildOregonPDF:
         conviction_charge.charge_type.severity_level = "Misdemeanor Class A"
         self.assert_pdf_values(pdf([conviction_charge]), {**self.expected_conviction_values, **new_expected_values})
 
-        # for k, v in pdf.get_field_dict().items():
-        #     print(f'"{k}": "{v}",')
 
-
+# TODO test Multnomah forms
 # TODO test multiple case.charges generate joined values
+# TODO test warning generation

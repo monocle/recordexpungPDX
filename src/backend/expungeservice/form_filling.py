@@ -136,9 +136,9 @@ class CaseResults(UserInfo):
     case_number_with_comments: Optional[str] = None
 
     @staticmethod
-    def build(case: Case, user_info: UserInfo, sid: str):
+    def build(case: Case, user_info_dict: Dict[str, str], sid: str):
         data = {
-            **asdict(user_info),
+            **user_info_dict,
             "case": case,
             "sid": sid,
             "county": case.summary.location,
@@ -301,7 +301,7 @@ class PDFFieldMapper(UserDict):
         self.pdf_source_path = pdf_source_path
         self.source_data = source_data
 
-        if isinstance(self.source_data, CaseResults):
+        if isinstance(source_data, CaseResults):
             if "multnomah" in pdf_source_path:
                 self.data = {**self.get_user_definition(), **self.get_multnomah_definition()}
             else:
@@ -445,7 +445,6 @@ class PDF:
 
     def set_pdf(self, pdf: PdfReader):
         self._pdf = pdf
-        # TODO use dict instead of array here?
         self.annotations = [annot for page in self._pdf.pages for annot in page.Annots or []]
         self.fields = {field.T: field for field in self._pdf.Root.AcroForm.Fields}
 
@@ -549,26 +548,17 @@ class FormFilling:
         zip_dir = mkdtemp()
         zip_path = path.join(zip_dir, FormFilling.ZIP_FILE_NAME)
         zipfile = ZipFile(zip_path, "w")
-
         sid = FormFilling._unify_sids(record_summary)
-        user_info = from_dict(data_class=UserInfo, data=user_information_dict)
 
         for case in record_summary.record.cases:
-            case_results = CaseResults.build(case, user_info, sid)
+            case_results = CaseResults.build(case, user_information_dict, sid)
 
             if case_results.is_expungeable_now:
-                pdf = FormFilling._build_pdf(case_results)
-                file_name, file_path = FormFilling._build_download_file_path(temp_dir, case_results)
+                file_info = FormFilling._create_and_write_pdf(case_results, temp_dir, append=FormFilling._add_warnings)
+                zipfile.write(*file_info)
 
-                pdf.write(file_path, append=FormFilling._add_warnings)
-                zipfile.write(file_path, file_name)
-
-        # Add OSP form
-        osp_pdf = FormFilling._build_pdf(user_info)
-        zip_file_path = path.join(temp_dir, FormFilling.OSP_PDF_NAME)
-
-        osp_pdf.write(zip_file_path)
-        zipfile.write(zip_file_path, FormFilling.OSP_PDF_NAME)
+        osp_file_info = FormFilling._create_and_write_pdf(user_information_dict, temp_dir)
+        zipfile.write(*osp_file_info)
         zipfile.close()
 
         return zip_path, FormFilling.ZIP_FILE_NAME
@@ -588,13 +578,13 @@ class FormFilling:
         warnings: List[str] = []
 
         if mapper.get("has_ineligible_charges"):
-            warnings.append(
-                "This form will attempt to expunge a case in part. This is relatively rare, and thus these forms should be reviewed particularly carefully."
-            )
+            message = "This form will attempt to expunge a case in part. This is relatively rare, and thus these forms should be reviewed particularly carefully."
+            warnings.append(message)
 
         if shrunk_fields:
             for field_name, value in shrunk_fields.items():
-                warnings.append(f'* The font size of "{value[1:-1]}" was shrunk to fit the bounding box of "{field_name[1:-1]}". An addendum might be required if it still doesn\'t fit.')
+                message = f'* The font size of "{value[1:-1]}" was shrunk to fit the bounding box of "{field_name[1:-1]}". An addendum might be required if it still doesn\'t fit.'
+                warnings.append(message)
 
         if warnings:
             text = "# Warnings from RecordSponge  \n"
@@ -606,31 +596,38 @@ class FormFilling:
             writer.addpages(blank_pdf.pages)
 
     @staticmethod
-    def _build_download_file_path(dir: str, case_results: CaseResults) -> Tuple[str, str]:
-        county = case_results.county.lower()
+    def _build_download_file_path(dir: str, source_data: Union[UserInfo, CaseResults]) -> Tuple[str, str]:
+        if not isinstance(source_data, CaseResults):
+            return path.join(dir, FormFilling.OSP_PDF_NAME), FormFilling.OSP_PDF_NAME
 
+        county = source_data.county.lower()
         # Douglas and Umatilla counties explicitly want the "Order" part of the old forms too.
         if county in ["douglas", "umatilla"]:
-            if case_results.has_conviction:
+            if source_data.has_conviction:
                 base_name = county + "_with_conviction_order.pdf"
             else:
                 base_name = county + "_with_arrest_order.pdf"
         else:
             base_name = county + ".pdf"
 
-        file_name = f"{case_results.case_name}_{case_results.case_number}_{base_name}"
-        return file_name, path.join(dir, file_name)
+        file_name = f"{source_data.case_name}_{source_data.case_number}_{base_name}"
+
+        return path.join(dir, file_name), file_name
 
     @staticmethod
-    def _get_file_name_for_case(case_results: CaseResults):
-        # Douglas and Umatilla counties explicitly want the "Order" part of the old forms too.
-        if case_results.county in ["Douglas", "Umatilla"]:
-            if case_results.has_conviction:
+    def _get_pdf_file_name(source_data: Union[UserInfo, CaseResults]) -> str:
+        if not isinstance(source_data, CaseResults):
+            return FormFilling.OSP_PDF_NAME
+
+        county = source_data.county.lower()
+       # Douglas and Umatilla counties explicitly want the "Order" part of the old forms too.
+        if county in ["douglas", "umatilla"]:
+            if source_data.has_conviction:
                 file_name = FormFilling.OREGON_CONVICTION_PDF_NAME
             else:
                 file_name = FormFilling.OREGON_ARREST_PDF_NAME
-        elif case_results.county == "Multnomah":
-            if case_results.has_conviction:
+        elif county == "multnomah":
+            if source_data.has_conviction:
                 file_name = FormFilling.MULTNOMAH_CONVICTION_PDF_NAME
             else:
                 file_name = FormFilling.MULTNOMAH_ARREST_PDF_NAME
@@ -640,13 +637,24 @@ class FormFilling:
         return file_name
 
     @staticmethod
-    def _build_pdf(source_data: Union[UserInfo, CaseResults], validate_initial_pdf_state=False):
-        if not isinstance(source_data, CaseResults):
-            file_name = FormFilling.OSP_PDF_NAME  # No case. Just use the OSP form.
-        else:
-            file_name = FormFilling._get_file_name_for_case(source_data)
-
+    def _create_pdf(source_data: Union[UserInfo, CaseResults], validate_initial_pdf_state=False) -> PDF:
+        file_name = FormFilling._get_pdf_file_name(source_data)
         pdf_path = path.join(FormFilling.BASE_DIR, file_name)
         mapper = PDFFieldMapper(pdf_path, source_data)
 
         return PDF.fill_form(mapper, validate_initial_pdf_state)
+
+    @staticmethod
+    def _create_and_write_pdf(
+        data: Union[Dict[str, str], CaseResults], dir: str, append: Callable = None, validate_initial_pdf_state=False
+    ) -> Tuple[str, str]:
+        if isinstance(data, CaseResults):
+            source_data = data
+        else:
+            source_data = from_dict(data_class=UserInfo, data=data)
+
+        pdf = FormFilling._create_pdf(source_data, validate_initial_pdf_state)
+        write_file_path, write_file_name = FormFilling._build_download_file_path(dir, source_data)
+        pdf.write(write_file_path, append=append)
+
+        return write_file_path, write_file_name
