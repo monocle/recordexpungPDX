@@ -393,6 +393,7 @@ class PDF:
         self.set_pdf(PdfReader(mapper.pdf_source_path))
         self.mapper = mapper
         self.shrunk_fields: Dict[str, str] = {}
+        self.writer = PdfWriter()
 
     def set_pdf(self, pdf: PdfReader):
         self._pdf = pdf
@@ -448,16 +449,20 @@ class PDF:
 
         self._pdf.Root.AcroForm.update(PdfDict(NeedAppearances=PdfObject("true")))
 
-    def write(self, path: str, append=None):
-        writer = PdfWriter()
-        writer.addpages(self._pdf.pages)
+    def add_pages(self, pdf):
+        self.writer.addpages(pdf._pdf.pages)
 
-        if append:
-            append(writer, self.shrunk_fields, self.mapper)
+    def add_text(self, text):
+        _pdf = PdfReader(MarkdownToPDF.to_pdf("Addendum", text))
+        self.writer.addpages(_pdf.pages)
 
-        trailer = writer.trailer
+    def write(self, path: str):
+        self.writer.addpages(self._pdf.pages)
+
+        trailer = self.writer.trailer
         trailer.Root.AcroForm = self._pdf.Root.AcroForm
-        writer.write(path, trailer=trailer)
+
+        self.writer.write(path, trailer=trailer)
 
     def get_annotation_dict(self):
         return {anot.T: anot for anot in self.annotations}
@@ -502,7 +507,7 @@ class FormFilling:
             case_results = CaseResults.build(case, user_information_dict, sid)
 
             if case_results.is_expungeable_now:
-                file_info = FormFilling._create_and_write_pdf(case_results, temp_dir, append=FormFilling._add_warnings)
+                file_info = FormFilling._create_and_write_pdf(case_results, temp_dir)
                 zip_file.write(*file_info)
 
         osp_file_info = FormFilling._create_and_write_pdf(user_information_dict, temp_dir)
@@ -522,10 +527,11 @@ class FormFilling:
         return ""
 
     @staticmethod
-    def _add_warnings(writer: PdfWriter, shrunk_fields: Dict[str, str], mapper: PDFFieldMapper):
+    def _generate_warnings_text(shrunk_fields: Dict[str, str], mapper: PDFFieldMapper) -> Optional[str]:
+        text = None
         warnings: List[str] = []
 
-        if mapper.get(PdfString.encode("has_ineligible_charges")):
+        if mapper.get("(has_ineligible_charges)"):
             message = "This form will attempt to expunge a case in part. This is relatively rare, and thus these forms should be reviewed particularly carefully."
             warnings.append(message)
 
@@ -539,9 +545,8 @@ class FormFilling:
             text += "Do not submit this page to the District Attorney's office.  \n \n"
             for warning in warnings:
                 text += f"\* {warning}  \n"
-            blank_pdf_bytes = MarkdownToPDF.to_pdf("Addendum", text)
-            blank_pdf = PdfReader(fdata=blank_pdf_bytes)
-            writer.addpages(blank_pdf.pages)
+
+        return text
 
     @staticmethod
     def _build_download_file_path(dir: str, source_data: Union[UserInfo, CaseResults]) -> Tuple[str, str]:
@@ -585,7 +590,7 @@ class FormFilling:
 
     @staticmethod
     def _create_and_write_pdf(
-        data: Union[Dict[str, str], UserInfo], dir: str, append: Callable = None, validate_initial_pdf_state=False
+        data: Union[Dict[str, str], UserInfo], dir: str, validate_initial_pdf_state=False
     ) -> Tuple[str, str]:
         if isinstance(data, UserInfo):
             source_data = data
@@ -593,7 +598,12 @@ class FormFilling:
             source_data = UserInfo(**data)
 
         pdf = FormFilling._create_pdf(source_data, validate_initial_pdf_state)
+        warnings_text = FormFilling._generate_warnings_text(pdf.shrunk_fields, pdf.mapper)
+
+        if warnings_text:
+            pdf.add_text(warnings_text)
+
         write_file_path, write_file_name = FormFilling._build_download_file_path(dir, source_data)
-        pdf.write(write_file_path, append=append)
+        pdf.write(write_file_path)
 
         return write_file_path, write_file_name
