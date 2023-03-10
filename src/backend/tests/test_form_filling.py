@@ -11,7 +11,7 @@ from unittest.mock import patch, Mock
 from dacite import from_dict
 
 from expungeservice.expunger import Expunger
-from expungeservice.form_filling import FormFilling, PDF, UserInfo, CaseResults
+from expungeservice.form_filling import FormFilling, PDF, UserInfo, CaseResults, PDFFieldMapper
 from expungeservice.record_merger import RecordMerger
 from expungeservice.record_summarizer import RecordSummarizer
 from expungeservice.models.case import Case
@@ -208,6 +208,57 @@ class TestPDFFileNameAndDownloadPath:
         assert file_path == "dir/OSP_Form.pdf"
 
 
+class TestWarningsGeneration:
+    lead_warning = "# Warnings from RecordSponge  \n" + \
+                   "Do not submit this page to the District Attorney's office.  \n \n"
+    partial_expungement_warning = "\\* This form will attempt to expunge a case in part. This is relatively rare, and thus these forms should be reviewed particularly carefully.  \n"
+
+    def font_warning(self, field_name, value):
+        return f'\\* * The font size of "{value[1:-1]}" was shrunk to fit the bounding box of "{field_name[1:-1]}". An addendum might be required if it still doesn\'t fit.  \n' 
+
+    @pytest.fixture
+    def mapper(self):
+        mapper = Mock()
+        mapper.get.return_value = False
+        return mapper
+
+    @pytest.fixture
+    def shrunk_fields(self):
+        shrunk_fields: Dict[str, str] = {}
+        return shrunk_fields
+
+    def test_no_warnings_generated_if_no_ineligible_charges_or_shrunk_fields(self, mapper, shrunk_fields):
+        warnings = FormFilling._generate_warnings_text(shrunk_fields, mapper)
+        assert warnings == None
+
+    def test_warnings_generated_if_there_are_ineligible_charges(self, mapper, shrunk_fields):
+        expected = self.lead_warning
+        expected += self.partial_expungement_warning
+
+        mapper.get.return_value = True
+        warnings = FormFilling._generate_warnings_text(shrunk_fields, mapper)
+        assert warnings == expected
+
+    def test_warnings_generated_if_there_are_shrunk_fields(self, mapper, shrunk_fields):
+        expected = self.lead_warning
+        expected += self.font_warning("(foo)", "(foo value)")
+        expected += self.font_warning("(bar)", "(bar value)")
+
+        shrunk_fields = {"(foo)": "(foo value)", "(bar)": "(bar value)"}
+        warnings = FormFilling._generate_warnings_text(shrunk_fields, mapper)
+        assert warnings == expected
+
+    def test_warnings_generated_if_there_are_shrunk_fields_and_ineligible_charges(self, mapper, shrunk_fields):
+        expected = self.lead_warning
+        expected += self.partial_expungement_warning
+        expected += self.font_warning("(foo)", "(foo value)")
+
+        mapper = {"(has_ineligible_charges)": True}
+        shrunk_fields = {"(foo)": "(foo value)"}
+        warnings = FormFilling._generate_warnings_text(shrunk_fields, mapper)
+        assert warnings == expected
+       
+    
 #########################################
 
 
@@ -251,7 +302,6 @@ class TestBuildOSPPDF:
         assert_pdf_values(pdf, expected_values)
 
 
-# TODO @patch("expungeservice.form_filling.MarkdownToPDF")
 class TestBuildOregonPDF:
     county = "Washington"
     expected_county_data = {
@@ -383,6 +433,7 @@ class TestBuildOregonPDF:
         charge.expungement_result.charge_eligibility.status = ChargeEligibilityStatus.ELIGIBLE_NOW
         charge.charge_type = Mock()
         charge.disposition = Mock()
+        charge.disposition.date = DateWithFuture.fromdatetime(datetime(2025, 5, 3))
         self.assert_pdf_values(pdf_factory([charge]), new_expected_values)
 
     ##### conviction #####
@@ -526,24 +577,7 @@ class TestBuildDouglasPDF(TestBuildOregonPDF):
     def test_oregon_base_case(self, case):
         pass
 
-    def test_has_no_complaint_has_dismissed(self, charge: Mock, pdf_factory: Callable):
-        new_expected_values = {
-            # has_no_complaint
-            "(record of arrest with no charges filed)": "/On",
-            "(no accusatory instrument was filed and at least 60 days have passed since the)": "/On",
-            # has_dismissed
-            "(an accusatory instrument was filed and I was acquitted or the case was dismissed)": "/On",
-            "(record of citation or charge that was dismissedacquitted)": "/On",
-            # case_number_with_comments
-            "(Case No)": "(base case number)",
-        }
-        charge.expungement_result.charge_eligibility.status = ChargeEligibilityStatus.ELIGIBLE_NOW
-        charge.charge_type = Mock()
-        charge.disposition = Mock()
-        charge.disposition.date = DateWithFuture.fromdatetime(datetime(2025, 5, 3))
-
 
 # TODO test Multnomah forms
 # TODO test multiple case.charges generate joined values
-# TODO test warning generation
 # TODO test font shrinking
