@@ -522,7 +522,7 @@ oregon_conviction_john_common_pdf_fields = {
             "(County)": "(Benton)",
             "(Case Number)": "(200000)",
             "(Case Name)": "(COMMON NAME)",
-            "(Arrest Dates All)": "(Oct 22, 2019)",
+            "(Arrest Dates)": "(Oct 22, 2019)",
             "(Charges All)": "(Obstruction Of Search Warrant)",
             "(Arresting Agency1)": None,
             "(Conviction Dates)": None,
@@ -599,7 +599,7 @@ oregon_conviction_john_common_pdf_fields = {
             "(County)": "(Baker)",
             "(Case Number)": "(110000)",
             "(Case Name)": "(COMMON NAME)",
-            "(Arrest Dates All)": "(Jul 8, 2015)",
+            "(Arrest Dates)": "(Jul 8, 2015)",
             "(Charges All)": "(Theft In The Second Degree)",
             "(Arresting Agency1)": None,
             "(Conviction Dates)": "(Aug 8, 2015)",
@@ -676,7 +676,7 @@ oregon_conviction_john_common_pdf_fields = {
             "(County)": "(Baker)",
             "(Case Number)": "(120000)",
             "(Case Name)": "(COMMON A NAME)",
-            "(Arrest Dates All)": "(Jul 8, 2014)",
+            "(Arrest Dates)": "(Jul 8, 2014)",
             "(Charges All)": "(Poss Under Oz Marijuana)",
             "(Arresting Agency1)": None,
             "(Conviction Dates)": "(Aug 8, 2014)",
@@ -713,7 +713,7 @@ multnomah_arrest_john_common_pdf_fields = {
             "(Arresting Agency)": None,
             "(Dismissed Arrest Dates)": "(Oct 22, 2019)",
             "(Dismissed Charges)": "(Obstruction Of Search Warrant)",
-            "(I Full Name)": "(John FullName Common)",
+            "(Full Name---)": "(John FullName Common)",
         }
     },
     "document_1": {
@@ -731,7 +731,7 @@ multnomah_arrest_john_common_pdf_fields = {
             "(Arresting Agency)": None,
             "(Dismissed Arrest Dates)": None,
             "(Dismissed Charges)": None,
-            "(I Full Name)": "(John FullName Common)",
+            "(Full Name---)": "(John FullName Common)",
         }
     },
     "document_2": {
@@ -749,7 +749,7 @@ multnomah_arrest_john_common_pdf_fields = {
             "(Arresting Agency)": None,
             "(Dismissed Arrest Dates)": None,
             "(Dismissed Charges)": None,
-            "(I Full Name)": "(John FullName Common)",
+            "(Full Name---)": "(John FullName Common)",
         }
     },
     "document_3": {
@@ -779,10 +779,10 @@ multnomah_conviction_john_common_pdf_fields = {
             "(State)": "(OR)",
             "(Zip Code)": "(97222)",
             "(Arresting Agency)": None,
-            "(Arrest Dates All)": "(Oct 22, 2019)",
+            "(Arrest Dates)": "(Oct 22, 2019)",
             "(Conviction Dates)": None,
             "(Conviction Charges)": None,
-            "(I Full Name)": "(John FullName Common)",
+            "(Full Name---)": "(John FullName Common)",
         }
     },
     "document_1": {
@@ -798,10 +798,10 @@ multnomah_conviction_john_common_pdf_fields = {
             "(State)": "(OR)",
             "(Zip Code)": "(97222)",
             "(Arresting Agency)": None,
-            "(Arrest Dates All)": "(Jul 8, 2015)",
+            "(Arrest Dates)": "(Jul 8, 2015)",
             "(Conviction Dates)": "(Aug 8, 2015)",
             "(Conviction Charges)": "(Theft In The Second Degree)",
-            "(I Full Name)": "(John FullName Common)",
+            "(Full Name---)": "(John FullName Common)",
         }
     },
     "document_2": {
@@ -817,10 +817,10 @@ multnomah_conviction_john_common_pdf_fields = {
             "(State)": "(OR)",
             "(Zip Code)": "(97222)",
             "(Arresting Agency)": None,
-            "(Arrest Dates All)": "(Jul 8, 2014)",
+            "(Arrest Dates)": "(Jul 8, 2014)",
             "(Conviction Dates)": "(Aug 8, 2014)",
             "(Conviction Charges)": "(Poss Under Oz Marijuana)",
-            "(I Full Name)": "(John FullName Common)",
+            "(Full Name---)": "(John FullName Common)",
         }
     },
     "document_3": {

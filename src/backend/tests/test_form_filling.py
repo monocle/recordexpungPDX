@@ -1,14 +1,13 @@
 import os
 from tempfile import mkdtemp
 from zipfile import ZipFile
-from typing import Dict, List
+from typing import Dict, List, Callable, Any
 from pathlib import Path
 import pickle
 from datetime import datetime
 
 import pytest
 from unittest.mock import patch, Mock
-from pdfrw import PdfString
 from dacite import from_dict
 
 from expungeservice.expunger import Expunger
@@ -77,7 +76,7 @@ class TestJohnCommonIntegration:
     @patch("expungeservice.form_filling.mkdtemp")
     def test_form_fields_are_filled(self, mock_mkdtemp, MockZipFile, MockPdfWriter, mock_get_pdf_file_name):
         mock_mkdtemp.return_value = "foo"
-        mock_get_pdf_file_name.side_effect = [self.filename, self.filename, self.filename, "osp.pdf"]
+        mock_get_pdf_file_name.side_effect = [self.filename, self.filename, self.filename, FormFilling.OSP_PDF_NAME + ".pdf"]
 
         user_information = {
             "full_name": "John FullName Common",
@@ -126,33 +125,32 @@ class TestJohnCommonIntegration:
         ]
         assert set(zip_write_args) == set(expected_zip_write_args)
 
+IntegrationResult = Dict[str, Any]
 
 class TestJohnCommonArrestIntegration(TestJohnCommonIntegration):
     filename = "oregon_arrest.pdf"
-    expected_form_values = oregon_arrest_john_common_pdf_fields
+    expected_form_values: IntegrationResult = oregon_arrest_john_common_pdf_fields
 
 
 class TestJohnCommonConvictionIntegration(TestJohnCommonIntegration):
     filename = "oregon_conviction.pdf"
-    expected_form_values = oregon_conviction_john_common_pdf_fields
+    expected_form_values: IntegrationResult = oregon_conviction_john_common_pdf_fields
 
 
 class TestJohnCommonMultnomahArrestIntegration(TestJohnCommonIntegration):
     filename = "multnomah_arrest.pdf"
-    expected_form_values = multnomah_arrest_john_common_pdf_fields
+    expected_form_values: IntegrationResult = multnomah_arrest_john_common_pdf_fields
 
 
 class TestJohnCommonMultnomahConvictionIntegration(TestJohnCommonIntegration):
     filename = "multnomah_conviction.pdf"
-    expected_form_values = multnomah_conviction_john_common_pdf_fields
+    expected_form_values: IntegrationResult = multnomah_conviction_john_common_pdf_fields
 
 
 #########################################
 
 
 class TestPDFFileNameAndDownloadPath:
-    dir_path = os.path.join(Path(__file__).parent.parent, "expungeservice", "files")
-
     def mock_case_results(self, county, has_convictions):
         mock_case_results = Mock(spec=CaseResults)
         mock_case_results.county = county
@@ -220,9 +218,6 @@ def assert_pdf_values(pdf: PDF, expected: Dict[str, str], opts=None):
             assert value is None, key
         if annotation_dict[key].FT == PDF.BUTTON_TYPE:
             assert value != PDF.BUTTON_ON, key
-
-
-#########################################
 
 
 class TestBuildOSPPDF:
@@ -338,7 +333,7 @@ class TestBuildOregonPDF:
         return case
 
     @pytest.fixture
-    def pdf(self, case):
+    def pdf_factory(self, case):
         def factory(charges: List[Charge]) -> PDF:
             case.charges = charges
             case_results = CaseResults.build(case, self.user_data, sid="sid0")
@@ -364,7 +359,7 @@ class TestBuildOregonPDF:
         pdf = FormFilling._create_pdf(case_results)
         self.assert_pdf_values(pdf, new_expected_values)
 
-    def test_has_no_complaint_has_dismissed(self, charge: Charge, pdf: PDF):
+    def test_has_no_complaint_has_dismissed(self, charge: Mock, pdf_factory: Callable):
         new_expected_values = {
             # has_no_complaint
             "(record of arrest with no charges filed)": "/On",
@@ -378,63 +373,63 @@ class TestBuildOregonPDF:
         charge.expungement_result.charge_eligibility.status = ChargeEligibilityStatus.ELIGIBLE_NOW
         charge.charge_type = Mock()
         charge.disposition = Mock()
-        self.assert_pdf_values(pdf([charge]), new_expected_values)
+        self.assert_pdf_values(pdf_factory([charge]), new_expected_values)
 
     ##### conviction #####
 
-    def test_has_probation_revoked(self, conviction_charge: Charge, pdf: PDF):
+    def test_has_probation_revoked(self, conviction_charge: Mock, pdf_factory: Callable):
         new_expected_values = {
             "(I was sentenced to probation in this case and)": "/On",
             "(My probation WAS revoked and 3 years have passed since the date of revocation)": "/On",
         }
         conviction_charge.charge_type = Mock()
-        conviction_charge.probation_revoked = True
-        self.assert_pdf_values(pdf([conviction_charge]), {**self.expected_conviction_values, **new_expected_values})
+        conviction_charge.probation_revoked = DateWithFuture.fromdatetime(datetime(1988, 5, 3))
+        self.assert_pdf_values(pdf_factory([conviction_charge]), {**self.expected_conviction_values, **new_expected_values})
 
-    def test_has_class_b_felony(self, conviction_charge: Charge, pdf: PDF):
+    def test_has_class_b_felony(self, conviction_charge: Mock, pdf_factory: Callable):
         new_expected_values = {
             "(Felony  Class B and)": "/On",
             "(7 years have passed since the later of the convictionjudgment or release date and)": "/On",
             "(I have not been convicted of any other offense or found guilty except for insanity in)": "/On",
         }
         conviction_charge.charge_type = FelonyClassB()
-        self.assert_pdf_values(pdf([conviction_charge]), {**self.expected_conviction_values, **new_expected_values})
+        self.assert_pdf_values(pdf_factory([conviction_charge]), {**self.expected_conviction_values, **new_expected_values})
 
-    def test_has_class_c_felony(self, conviction_charge: Charge, pdf: PDF):
+    def test_has_class_c_felony(self, conviction_charge: Mock, pdf_factory: Callable):
         new_expected_values = {
             "(Felony  Class C and)": "/On",
             "(5 years have passed since the later of the convictionjudgment or release date and)": "/On",
             "(I have not been convicted of any other offense or found guilty except for insanity in_2)": "/On",
         }
         conviction_charge.charge_type = FelonyClassC()
-        self.assert_pdf_values(pdf([conviction_charge]), {**self.expected_conviction_values, **new_expected_values})
+        self.assert_pdf_values(pdf_factory([conviction_charge]), {**self.expected_conviction_values, **new_expected_values})
 
-    def test_has_class_a_misdeanor(self, conviction_charge: Charge, pdf: PDF):
+    def test_has_class_a_misdeanor(self, conviction_charge: Mock, pdf_factory: Callable):
         new_expected_values = {
             "(Misdemeanor  Class A and)": "/On",
             "(3 years have passed since the later of the convictionjudgment or release date and)": "/On",
             "(I have not been convicted of any other offense or found guilty except for insanity in_3)": "/On",
         }
         conviction_charge.charge_type = MisdemeanorClassA()
-        self.assert_pdf_values(pdf([conviction_charge]), {**self.expected_conviction_values, **new_expected_values})
+        self.assert_pdf_values(pdf_factory([conviction_charge]), {**self.expected_conviction_values, **new_expected_values})
 
-    def test_has_class_bc_misdeanor(self, conviction_charge: Charge, pdf: PDF):
+    def test_has_class_bc_misdeanor(self, conviction_charge: Mock, pdf_factory: Callable):
         new_expected_values = {
             "(Misdemeanor  Class B or C and)": "/On",
             "(1 year has passed since the later of the convictionfindingjudgment or release)": "/On",
             "(I have not been convicted of any other offense or found guilty except for insanity)": "/On",
         }
         conviction_charge.charge_type = MisdemeanorClassBC()
-        self.assert_pdf_values(pdf([conviction_charge]), {**self.expected_conviction_values, **new_expected_values})
+        self.assert_pdf_values(pdf_factory([conviction_charge]), {**self.expected_conviction_values, **new_expected_values})
 
-    def test_has_violation(self, conviction_charge: Charge, pdf: PDF):
+    def test_has_violation(self, conviction_charge: Mock, pdf_factory: Callable):
         for charge_type in [Violation, ReducedToViolation, MarijuanaViolation]:
             conviction_charge.charge_type = charge_type()
             self.assert_pdf_values(
-                pdf([conviction_charge]), {**self.expected_conviction_values, **self.expected_violation_values}
+                pdf_factory([conviction_charge]), {**self.expected_conviction_values, **self.expected_violation_values}
             )
 
-    def test_has_contempt_of_court(self, conviction_charge: Charge, pdf: PDF):
+    def test_has_contempt_of_court(self, conviction_charge: Mock, pdf_factory: Callable):
         new_expected_values = {
             "(contempt of court finding)": "/On",
         }
@@ -444,11 +439,11 @@ class TestBuildOregonPDF:
             **self.expected_violation_values,
             **new_expected_values,
         }
-        self.assert_pdf_values(pdf([conviction_charge]), all_expected_values)
+        self.assert_pdf_values(pdf_factory([conviction_charge]), all_expected_values)
 
     ##### charge.charge_type.severity_level #####
 
-    def test_has_felony_class_c_severity_level(self, conviction_charge: Charge, pdf: PDF):
+    def test_has_felony_class_c_severity_level(self, conviction_charge: Mock, pdf_factory: Callable):
         new_expected_values = {
             "(Felony  Class C and)": "/On",
             "(5 years have passed since the later of the convictionjudgment or release date and)": "/On",
@@ -456,9 +451,9 @@ class TestBuildOregonPDF:
         }
         conviction_charge.charge_type = Mock()
         conviction_charge.charge_type.severity_level = "Felony Class C"
-        self.assert_pdf_values(pdf([conviction_charge]), {**self.expected_conviction_values, **new_expected_values})
+        self.assert_pdf_values(pdf_factory([conviction_charge]), {**self.expected_conviction_values, **new_expected_values})
 
-    def test_has_misdemeanor_class_a_severity_level(self, conviction_charge: Charge, pdf: PDF):
+    def test_has_misdemeanor_class_a_severity_level(self, conviction_charge: Mock, pdf_factory: Callable):
         new_expected_values = {
             "(Misdemeanor  Class A and)": "/On",
             "(3 years have passed since the later of the convictionjudgment or release date and)": "/On",
@@ -466,9 +461,10 @@ class TestBuildOregonPDF:
         }
         conviction_charge.charge_type = Mock()
         conviction_charge.charge_type.severity_level = "Misdemeanor Class A"
-        self.assert_pdf_values(pdf([conviction_charge]), {**self.expected_conviction_values, **new_expected_values})
+        self.assert_pdf_values(pdf_factory([conviction_charge]), {**self.expected_conviction_values, **new_expected_values})
 
 
 # TODO test Multnomah forms
 # TODO test multiple case.charges generate joined values
 # TODO test warning generation
+# TODO test font shrinking

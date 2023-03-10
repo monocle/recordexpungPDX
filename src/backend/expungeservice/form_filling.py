@@ -1,4 +1,4 @@
-from dataclasses import dataclass, replace, asdict
+from dataclasses import dataclass
 from os import path
 from pathlib import Path
 from tempfile import mkdtemp
@@ -6,7 +6,6 @@ from typing import List, Dict, Tuple, Union, Callable, Optional
 from zipfile import ZipFile
 from collections import UserDict
 
-from dacite import from_dict
 from pdfrw import PdfReader, PdfWriter, PdfDict, PdfObject, PdfName, PdfString
 
 from expungeservice.models.case import Case
@@ -132,22 +131,20 @@ class CaseResults(UserInfo):
     case_number: str
     has_no_balance: bool
     da_number: str
-    da_address: Optional[str] = None
-    case_number_with_comments: Optional[str] = None
+    arresting_agency: Optional[str] = None
 
     @staticmethod
     def build(case: Case, user_info_dict: Dict[str, str], sid: str):
-        data = {
+        return CaseResults(
+            case = case,
+            sid = sid,
+            county = case.summary.location,
+            case_number = case.summary.case_number,
+            case_name = case.summary.name,
+            has_no_balance = case.summary.balance_due_in_cents == 0,
+            da_number = case.summary.district_attorney_number,
             **user_info_dict,
-            "case": case,
-            "sid": sid,
-            "county": case.summary.location,
-            "case_number": case.summary.case_number,
-            "case_name": case.summary.name,
-            "has_no_balance": case.summary.balance_due_in_cents == 0,
-            "da_number": case.summary.district_attorney_number,
-        }
-        return from_dict(data_class=CaseResults, data=data)
+        )
 
     def __post_init__(self):
         filtered_charges = tuple(c for c in self.case.charges if c.edit_status != EditStatus.DELETE)
@@ -160,18 +157,26 @@ class CaseResults(UserInfo):
         self.dismissed = Charges(dismissed)
         self.convictions = Charges(convictions)
 
+    @property
+    def da_address(self):
         county = self.county.replace(" ", "_").lower()
-        self.da_address = DA_ADDRESSES.get(county, "")
+        return DA_ADDRESSES.get(county, "")
 
-        self.case_number_with_comments = self.case_number
+    @property
+    def case_number_with_comments(self):
+        with_comments = self.case_number
+
         if self.has_ineligible_charges:
             in_part = ", ".join(self.short_eligible_ids)
-            self.case_number_with_comments = f"{self.case_number} (charge {in_part} only)"
+            with_comments = f"{self.case_number} (charge {in_part} only)"
+        
+        return with_comments
+
 
     ##### All charges #####
 
     @property
-    def charge_names(self) -> List[str]:
+    def charges_all(self) -> List[str]:
         return self.charges.names
 
     @property
@@ -205,7 +210,7 @@ class CaseResults(UserInfo):
     ##### Dismissed charges #####
 
     @property
-    def dismissed_names(self) -> List[str]:
+    def dismissed_charges(self) -> List[str]:
         return self.dismissed.names
 
     @property
@@ -227,7 +232,7 @@ class CaseResults(UserInfo):
     ##### Convicted charges #####
 
     @property
-    def conviction_names(self) -> List[str]:
+    def conviction_charges(self) -> List[str]:
         return self.convictions.names
 
     @property
@@ -290,26 +295,33 @@ class CaseResults(UserInfo):
 # 5. Add to expungeservice/files/ folder.
 class PDFFieldMapper(UserDict):
     """
-    Maps the names of the PDF fields (pdf.Root.AcroForm.Fields or page.Annots)
-    to app variables. The order is what comes out of Root.AcroForm.Fields.
-    Commented fields are those we are not filling in.
+    * The PDF fields can be manually named using Acrobat and the source_data
+    property can be inferred from the field name. For example, a field labeled
+    "Full Name" will be mapped to `source_data.full_name`.
+
+    However, PDF annotation fields should have unique names. So for forms that have repeat
+    field names, append `***[unique_character_sequence]` to the field name. Ex:
+    "Full Name---2" will also be mapped to `source_data.full_name`. (The `unique_character_sequence`
+    does not affect the source_data mapping.)
+
+    * If a value is not found, the supplementary mapping will be used.
     """
 
-    def __init__(self, pdf_source_path: str, source_data: Union[UserInfo, CaseResults]):
+    def __init__(self, pdf_source_path: str, source_data: UserInfo):
         super().__init__()
 
         self.pdf_source_path = pdf_source_path
         self.source_data = source_data
+        self.data = self.extra_mappings()
 
-        if isinstance(source_data, CaseResults):
-            if "multnomah" in pdf_source_path:
-                self.data = {**self.get_user_definition(), **self.get_multnomah_definition()}
-            else:
-                self.data = {**self.get_user_definition(), **self.get_oregon_definition()}
-        else:
-            self.data = self.get_user_definition()
+    def __getitem__(self, key):
+        attr = key[1:-1].lower().replace(" ", "_").split("---")[0]
+        try:
+            return getattr(self.source_data, attr)
+        except:
+            return self.data.get(key)
 
-    def get_oregon_definition(self):
+    def extra_mappings(self):
         s = self.source_data
         if not isinstance(s, CaseResults):
             return {}
@@ -320,19 +332,14 @@ class PDFFieldMapper(UserDict):
             "(Case No)": s.case_number_with_comments,
             "(Defendant)": s.case_name,
             "(DOB)": s.date_of_birth,
-            "(SID)": s.sid,
-            # "(Fingerprint number FPN  if known)"
             "(record of arrest with no charges filed)": s.has_no_complaint,
             "(record of arrest with charges filed and the associated check all that apply)": not s.has_no_complaint,
             "(conviction)": s.has_conviction,
             "(record of citation or charge that was dismissedacquitted)": s.has_dismissed,
             "(contempt of court finding)": s.has_contempt_of_court,
-            # "(finding of Guilty Except for Insanity GEI)"
-            # "(provided in ORS 137223)"
             "(I am not currently charged with a crime)": True,
             "(The arrest or citation I want to set aside is not for a charge of Driving Under the Influence of)": True,
             "(Date of conviction contempt finding or judgment of GEI)": s.conviction_dates,
-            # "(PSRB)"
             "(ORS 137225 does not prohibit a setaside of this conviction see Instructions)": s.has_conviction,
             "(Felony  Class B and)": s.has_class_b_felony,
             "(Felony  Class C and)": s.has_class_c_felony,
@@ -351,71 +358,15 @@ class PDFFieldMapper(UserDict):
             "(I have not been convicted of any other offense or found guilty except for insanity_2)": s.has_violation_or_contempt_of_court,
             "(I have fully completed complied with or performed all terms of the sentence of the court)": s.has_conviction,
             "(I was sentenced to probation in this case and)": s.has_probation_revoked,
-            # "(My probation WAS NOT revoked)"
             "(My probation WAS revoked and 3 years have passed since the date of revocation)": s.has_probation_revoked,
             "(Date of arrest)": s.arrest_dates,
-            # "(If no arrest date date of citation booking or incident)": # NEW FIELD
-            # "(Arresting Agency)"
             "(no accusatory instrument was filed and at least 60 days have passed since the)": s.has_no_complaint,
             "(an accusatory instrument was filed and I was acquitted or the case was dismissed)": s.has_dismissed,
             "(have sent)": True,
-            # "(will send a copy of my fingerprints to the Department of State Police)"
-            # "(Date)"
-            # "(Signature)"
             "(Name typed or printed)": s.full_name,
             "(Address)": ",    ".join([s.mailing_address, s.city, s.state, s.zip_code, s.phone_number]),
-            # "(States mail a true and complete copy of this Motion to Set Aside and Declaration in Support to)"
-            # "(delivered or)"
-            # "(placed in the United)"
-            # "(the District Attorney at address 1)":
-            "(the District Attorney at address 2)": s.da_address,  # use this line since it is longer
-            # "(the District Attorney at address 3)"
-            # "(Date_2)"
-            # "(Signature_2)"
+            "(the District Attorney at address 2)": s.da_address,
             "(Name typed or printed_2)": s.full_name,
-            # The following fields are additional fields from oregon_with_conviction_order.pdf.
-            "(County)": s.county,
-            "(Case Number)": s.case_number_with_comments,
-            "(Case Name)": s.case_name,
-            "(Arrest Dates All)": s.arrest_dates,
-            "(Charges All)": s.charge_names,
-            # "(Arresting Agency)": s.arresting_agency,
-            "(Conviction Dates)": s.conviction_dates,
-            "(Conviction Charges)": s.conviction_names,
-            # The following fields are additional fields from oregon_with_arrest_order.pdf.
-            "(Dismissed Arrest Dates)": s.dismissed_arrest_dates,
-            "(Dismissed Charges)": s.dismissed_names,
-            "(Dismissed Dates)": s.dismissed_dates,
-        }
-
-    def get_multnomah_definition(self):
-        s = self.source_data
-        if not isinstance(s, CaseResults):
-            return {}
-
-        return {
-            "(Case Name)": s.case_name,
-            "(Case Number)": s.case_number_with_comments,
-            "(DA Number)": s.da_number,
-            # "(Arresting Agency)"
-            "(Dismissed Arrest Dates)": s.dismissed_arrest_dates,
-            "(Dismissed Charges)": s.dismissed_names,
-            "(I Full Name)": s.full_name,
-            "(Arrest Dates All)": s.arrest_dates,
-            "(Conviction Dates)": s.conviction_dates,
-            "(Conviction Charges)": s.conviction_names,
-        }
-
-    def get_user_definition(self):
-        s: UserInfo = self.source_data
-        return {
-            "(Full Name)": s.full_name,
-            "(Date of Birth)": s.date_of_birth,
-            "(Mailing Address)": s.mailing_address,
-            "(Phone Number)": s.phone_number,
-            "(City)": s.city,
-            "(State)": s.state,
-            "(Zip Code)": s.zip_code,
         }
 
 
@@ -454,7 +405,6 @@ class PDF:
     necessarily "/Yes". If a new form has been made, make sure to check
     which value to use here and redefine BUTTON_ON if needed.
     """
-
     def set_checkbox_on(self, annotation):
         assert self.BUTTON_ON in annotation.AP.N.keys()
         annotation.V = self.BUTTON_ON
@@ -533,6 +483,12 @@ class PDF:
 
 
 class FormFilling:
+    OREGON_PDF_NAME = "oregon"
+    NON_OREGON_PDF_COUNTIES = ["multnomah"]
+    COUNTIES_NEEDING_CONVICTION_OR_ARREST_ORDER = ["douglas", "umatilla", "multnomah"]
+    COUNTIES_NEEDING_COUNTY_SPECIFIC_DOWNLOAD_NAME = ["douglas", "umatilla"]
+    OSP_PDF_NAME = "OSP_Form"
+
     @staticmethod
     def build_zip(record_summary: RecordSummary, user_information_dict: Dict[str, str]) -> Tuple[str, str]:
         temp_dir = mkdtemp()
@@ -569,7 +525,7 @@ class FormFilling:
     def _add_warnings(writer: PdfWriter, shrunk_fields: Dict[str, str], mapper: PDFFieldMapper):
         warnings: List[str] = []
 
-        if mapper.get("has_ineligible_charges"):
+        if mapper.get(PdfString.encode("has_ineligible_charges")):
             message = "This form will attempt to expunge a case in part. This is relatively rare, and thus these forms should be reviewed particularly carefully."
             warnings.append(message)
 
@@ -592,14 +548,16 @@ class FormFilling:
         if isinstance(source_data, CaseResults):
             base_name = source_data.county.lower()
 
-            if base_name in ["douglas", "umatilla"]:
+            if base_name in FormFilling.COUNTIES_NEEDING_COUNTY_SPECIFIC_DOWNLOAD_NAME:
                 base_name += "_with_"
                 base_name += "conviction" if source_data.has_conviction else "arrest"
                 base_name += "_order"
 
-            file_name = f"{source_data.case_name}_{source_data.case_number}_{base_name}.pdf"
+            file_name = f"{source_data.case_name}_{source_data.case_number}_{base_name}"
         else:
-            file_name = "OSP_Form.pdf"
+            file_name = FormFilling.OSP_PDF_NAME
+
+        file_name += ".pdf"
 
         return path.join(dir, file_name), file_name
 
@@ -607,17 +565,17 @@ class FormFilling:
     def _get_pdf_file_name(source_data: Union[UserInfo, CaseResults]) -> str:
         if isinstance(source_data, CaseResults):
             county = source_data.county.lower()
-            file_name = "multnomah" if county == "multnomah" else "oregon"
+            file_name = county if county in FormFilling.NON_OREGON_PDF_COUNTIES else FormFilling.OREGON_PDF_NAME
 
-            if county in ["douglas", "umatilla", "multnomah"]:
+            if county in FormFilling.COUNTIES_NEEDING_CONVICTION_OR_ARREST_ORDER:
                 file_name += "_conviction" if source_data.has_conviction else "_arrest"
         else:
-            file_name = "osp"
+            file_name = FormFilling.OSP_PDF_NAME
 
         return file_name + ".pdf"
 
     @staticmethod
-    def _create_pdf(source_data: Union[UserInfo, CaseResults], validate_initial_pdf_state=False) -> PDF:
+    def _create_pdf(source_data: UserInfo, validate_initial_pdf_state=False) -> PDF:
         file_name = FormFilling._get_pdf_file_name(source_data)
         dir = path.join(Path(__file__).parent, "files")
         pdf_path = path.join(dir, file_name)
@@ -627,12 +585,12 @@ class FormFilling:
 
     @staticmethod
     def _create_and_write_pdf(
-        data: Union[Dict[str, str], CaseResults], dir: str, append: Callable = None, validate_initial_pdf_state=False
+        data: Union[Dict[str, str], UserInfo], dir: str, append: Callable = None, validate_initial_pdf_state=False
     ) -> Tuple[str, str]:
-        if isinstance(data, CaseResults):
+        if isinstance(data, UserInfo):
             source_data = data
         else:
-            source_data = from_dict(data_class=UserInfo, data=data)
+            source_data = UserInfo(**data)
 
         pdf = FormFilling._create_pdf(source_data, validate_initial_pdf_state)
         write_file_path, write_file_name = FormFilling._build_download_file_path(dir, source_data)
