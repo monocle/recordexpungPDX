@@ -28,7 +28,6 @@ from expungeservice.models.expungement_result import ChargeEligibilityStatus
 from expungeservice.util import DateWithFuture
 
 from tests.factories.crawler_factory import CrawlerFactory
-from tests.factories.charge_factory import ChargeFactory
 from tests.fixtures.case_details import CaseDetails
 from tests.fixtures.john_doe import JohnDoe
 from tests.integration.form_filling_data import (
@@ -76,7 +75,12 @@ class TestJohnCommonIntegration:
     @patch("expungeservice.form_filling.mkdtemp")
     def test_form_fields_are_filled(self, mock_mkdtemp, MockZipFile, MockPdfWriter, mock_get_pdf_file_name):
         mock_mkdtemp.return_value = "foo"
-        mock_get_pdf_file_name.side_effect = [self.filename, self.filename, self.filename, FormFilling.OSP_PDF_NAME + ".pdf"]
+        mock_get_pdf_file_name.side_effect = [
+            self.filename,
+            self.filename,
+            self.filename,
+            FormFilling.OSP_PDF_NAME + ".pdf",
+        ]
 
         user_information = {
             "full_name": "John FullName Common",
@@ -125,7 +129,9 @@ class TestJohnCommonIntegration:
         ]
         assert set(zip_write_args) == set(expected_zip_write_args)
 
+
 IntegrationResult = Dict[str, Any]
+
 
 class TestJohnCommonArrestIntegration(TestJohnCommonIntegration):
     filename = "oregon_arrest.pdf"
@@ -245,7 +251,15 @@ class TestBuildOSPPDF:
         assert_pdf_values(pdf, expected_values)
 
 
+# TODO @patch("expungeservice.form_filling.MarkdownToPDF")
 class TestBuildOregonPDF:
+    county = "Washington"
+    expected_county_data = {
+        # county
+        "(FOR THE COUNTY OF)": "(Washington)",
+        # da_address
+        "(the District Attorney at address 2)": "(District Attorney - 150 N First Avenue, Suite 300 - Hillsboro, OR 97124-3002)",
+    }
     user_data = {
         "full_name": "foo bar",
         "date_of_birth": "1/2/1999",
@@ -256,8 +270,6 @@ class TestBuildOregonPDF:
         "phone_number": "555-555-1234",
     }
     expected_base_values = {
-        # county
-        "(FOR THE COUNTY OF)": "(Washington)",
         # constant
         "(Plaintiff)": "(State of Oregon)",
         # case_name
@@ -277,8 +289,6 @@ class TestBuildOregonPDF:
         "(Name typed or printed)": "(foo bar)",
         # mailing_address, city, state, zip_code, phone_number
         "(Address)": "(1234 NE Dev St. #12,    Portland,    OR,    97111,    555-555-1234)",
-        # da_address
-        "(the District Attorney at address 2)": "(District Attorney - 150 N First Avenue, Suite 300 - Hillsboro, OR 97124-3002)",
         # full_name
         "(Name typed or printed_2)": "(foo bar)",
     }
@@ -325,7 +335,7 @@ class TestBuildOregonPDF:
         case = Mock(spec=Case)
         case.summary = Mock(autospec=True)
         case.summary.balance_due_in_cents = 0
-        case.summary.location = "Washington"
+        case.summary.location = self.county
         case.summary.name = "Case Name 0"
         case.summary.district_attorney_number = "DA num 0"
         case.summary.case_number = "base case number"
@@ -343,7 +353,7 @@ class TestBuildOregonPDF:
         return factory
 
     def assert_pdf_values(self, pdf: PDF, new_expected_values):
-        all_expected_values = {**self.expected_base_values, **new_expected_values}
+        all_expected_values = {**self.expected_county_data, **self.expected_base_values, **new_expected_values}
         assert_pdf_values(pdf, all_expected_values)
 
     ############# tests #############
@@ -384,7 +394,9 @@ class TestBuildOregonPDF:
         }
         conviction_charge.charge_type = Mock()
         conviction_charge.probation_revoked = DateWithFuture.fromdatetime(datetime(1988, 5, 3))
-        self.assert_pdf_values(pdf_factory([conviction_charge]), {**self.expected_conviction_values, **new_expected_values})
+        self.assert_pdf_values(
+            pdf_factory([conviction_charge]), {**self.expected_conviction_values, **new_expected_values}
+        )
 
     def test_has_class_b_felony(self, conviction_charge: Mock, pdf_factory: Callable):
         new_expected_values = {
@@ -393,7 +405,9 @@ class TestBuildOregonPDF:
             "(I have not been convicted of any other offense or found guilty except for insanity in)": "/On",
         }
         conviction_charge.charge_type = FelonyClassB()
-        self.assert_pdf_values(pdf_factory([conviction_charge]), {**self.expected_conviction_values, **new_expected_values})
+        self.assert_pdf_values(
+            pdf_factory([conviction_charge]), {**self.expected_conviction_values, **new_expected_values}
+        )
 
     def test_has_class_c_felony(self, conviction_charge: Mock, pdf_factory: Callable):
         new_expected_values = {
@@ -402,7 +416,9 @@ class TestBuildOregonPDF:
             "(I have not been convicted of any other offense or found guilty except for insanity in_2)": "/On",
         }
         conviction_charge.charge_type = FelonyClassC()
-        self.assert_pdf_values(pdf_factory([conviction_charge]), {**self.expected_conviction_values, **new_expected_values})
+        self.assert_pdf_values(
+            pdf_factory([conviction_charge]), {**self.expected_conviction_values, **new_expected_values}
+        )
 
     def test_has_class_a_misdeanor(self, conviction_charge: Mock, pdf_factory: Callable):
         new_expected_values = {
@@ -411,7 +427,9 @@ class TestBuildOregonPDF:
             "(I have not been convicted of any other offense or found guilty except for insanity in_3)": "/On",
         }
         conviction_charge.charge_type = MisdemeanorClassA()
-        self.assert_pdf_values(pdf_factory([conviction_charge]), {**self.expected_conviction_values, **new_expected_values})
+        self.assert_pdf_values(
+            pdf_factory([conviction_charge]), {**self.expected_conviction_values, **new_expected_values}
+        )
 
     def test_has_class_bc_misdeanor(self, conviction_charge: Mock, pdf_factory: Callable):
         new_expected_values = {
@@ -420,7 +438,9 @@ class TestBuildOregonPDF:
             "(I have not been convicted of any other offense or found guilty except for insanity)": "/On",
         }
         conviction_charge.charge_type = MisdemeanorClassBC()
-        self.assert_pdf_values(pdf_factory([conviction_charge]), {**self.expected_conviction_values, **new_expected_values})
+        self.assert_pdf_values(
+            pdf_factory([conviction_charge]), {**self.expected_conviction_values, **new_expected_values}
+        )
 
     def test_has_violation(self, conviction_charge: Mock, pdf_factory: Callable):
         for charge_type in [Violation, ReducedToViolation, MarijuanaViolation]:
@@ -451,7 +471,9 @@ class TestBuildOregonPDF:
         }
         conviction_charge.charge_type = Mock()
         conviction_charge.charge_type.severity_level = "Felony Class C"
-        self.assert_pdf_values(pdf_factory([conviction_charge]), {**self.expected_conviction_values, **new_expected_values})
+        self.assert_pdf_values(
+            pdf_factory([conviction_charge]), {**self.expected_conviction_values, **new_expected_values}
+        )
 
     def test_has_misdemeanor_class_a_severity_level(self, conviction_charge: Mock, pdf_factory: Callable):
         new_expected_values = {
@@ -461,7 +483,64 @@ class TestBuildOregonPDF:
         }
         conviction_charge.charge_type = Mock()
         conviction_charge.charge_type.severity_level = "Misdemeanor Class A"
-        self.assert_pdf_values(pdf_factory([conviction_charge]), {**self.expected_conviction_values, **new_expected_values})
+        self.assert_pdf_values(
+            pdf_factory([conviction_charge]), {**self.expected_conviction_values, **new_expected_values}
+        )
+
+
+class TestBuildDouglasPDF(TestBuildOregonPDF):
+    county = "Douglas"
+    expected_county_data = {
+        # county
+        "(FOR THE COUNTY OF)": "(Douglas)",
+        # da_address
+        "(the District Attorney at address 2)": "(District Attorney - 1036 SE Douglas Avenue - Justice Building, Room 204 - Roseburg, OR 97470)",
+        "(County)": "(Douglas)",
+    }
+    expected_conviction_order_values = {
+        "(Case Number)": "(base case number)",
+        "(Case Name)": "(Case Name 0)",
+        "(Arrest Dates)": "(Feb 3, 2020)",
+        "(Charges All)": "(A Bad Thing)",
+        "(Conviction Dates)": "(Dec 3, 1999)",
+        "(Conviction Charges)": "(A Bad Thing)",
+    }
+    expected_arrest_order_values = {
+        "(Case Number)": "(base case number)",
+        "(Case Name)": "(Case Name 0)",
+        # "(Arrest Dates)": "(Feb 3, 2020)",
+        "(Dismissed Arrest Dates)": "(Feb 3, 2020)",
+        "(Dismissed Charges)": "(A Bad Thing)",
+        "(Dismissed Dates)": "(May 3, 2025)",
+    }
+
+    def assert_pdf_values(self, pdf: PDF, new_expected_values):
+        all_expected_values = {**self.expected_county_data, **self.expected_base_values, **new_expected_values}
+        if pdf.mapper["(has_conviction)"]:
+            extra = self.expected_conviction_order_values
+        else:
+            extra = self.expected_arrest_order_values
+
+        assert_pdf_values(pdf, {**all_expected_values, **extra})
+
+    def test_oregon_base_case(self, case):
+        pass
+
+    def test_has_no_complaint_has_dismissed(self, charge: Mock, pdf_factory: Callable):
+        new_expected_values = {
+            # has_no_complaint
+            "(record of arrest with no charges filed)": "/On",
+            "(no accusatory instrument was filed and at least 60 days have passed since the)": "/On",
+            # has_dismissed
+            "(an accusatory instrument was filed and I was acquitted or the case was dismissed)": "/On",
+            "(record of citation or charge that was dismissedacquitted)": "/On",
+            # case_number_with_comments
+            "(Case No)": "(base case number)",
+        }
+        charge.expungement_result.charge_eligibility.status = ChargeEligibilityStatus.ELIGIBLE_NOW
+        charge.charge_type = Mock()
+        charge.disposition = Mock()
+        charge.disposition.date = DateWithFuture.fromdatetime(datetime(2025, 5, 3))
 
 
 # TODO test Multnomah forms

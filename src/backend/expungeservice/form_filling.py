@@ -136,13 +136,13 @@ class CaseResults(UserInfo):
     @staticmethod
     def build(case: Case, user_info_dict: Dict[str, str], sid: str):
         return CaseResults(
-            case = case,
-            sid = sid,
-            county = case.summary.location,
-            case_number = case.summary.case_number,
-            case_name = case.summary.name,
-            has_no_balance = case.summary.balance_due_in_cents == 0,
-            da_number = case.summary.district_attorney_number,
+            case=case,
+            sid=sid,
+            county=case.summary.location,
+            case_number=case.summary.case_number,
+            case_name=case.summary.name,
+            has_no_balance=case.summary.balance_due_in_cents == 0,
+            da_number=case.summary.district_attorney_number,
             **user_info_dict,
         )
 
@@ -169,9 +169,8 @@ class CaseResults(UserInfo):
         if self.has_ineligible_charges:
             in_part = ", ".join(self.short_eligible_ids)
             with_comments = f"{self.case_number} (charge {in_part} only)"
-        
-        return with_comments
 
+        return with_comments
 
     ##### All charges #####
 
@@ -319,7 +318,7 @@ class PDFFieldMapper(UserDict):
         try:
             return getattr(self.source_data, attr)
         except:
-            return self.data.get(key)
+            return super().__getitem__(key)
 
     def extra_mappings(self):
         s = self.source_data
@@ -406,6 +405,7 @@ class PDF:
     necessarily "/Yes". If a new form has been made, make sure to check
     which value to use here and redefine BUTTON_ON if needed.
     """
+
     def set_checkbox_on(self, annotation):
         assert self.BUTTON_ON in annotation.AP.N.keys()
         annotation.V = self.BUTTON_ON
@@ -453,7 +453,7 @@ class PDF:
         self.writer.addpages(pdf._pdf.pages)
 
     def add_text(self, text):
-        _pdf = PdfReader(MarkdownToPDF.to_pdf("Addendum", text))
+        _pdf = PdfReader(fdata=MarkdownToPDF.to_pdf("Addendum", text))
         self.writer.addpages(_pdf.pages)
 
     def write(self, path: str):
@@ -584,8 +584,8 @@ class FormFilling:
         file_name = FormFilling._get_pdf_file_name(source_data)
         dir = path.join(Path(__file__).parent, "files")
         pdf_path = path.join(dir, file_name)
-        mapper = PDFFieldMapper(pdf_path, source_data)
 
+        mapper = PDFFieldMapper(pdf_path, source_data)
         return PDF.fill_form(mapper, validate_initial_pdf_state)
 
     @staticmethod
