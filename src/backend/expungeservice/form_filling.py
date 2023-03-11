@@ -78,7 +78,6 @@ class Charges:
             If false, the charge.date wil be returned.
         """
         dates = [charge.disposition.date if is_disposition else charge.date for charge in self._charges]
-        dates.sort()
         return list(dict.fromkeys(dates))
 
     @property
@@ -267,44 +266,34 @@ class CaseResults(UserInfo):
         return self.convictions.has_any_with_getter(lambda charge: charge.probation_revoked)
 
 
-# https://westhealth.github.io/exploring-fillable-forms-with-pdfrw.html
-# https://akdux.com/python/2020/10/31/python-fill-pdf-files/
-# https://stackoverflow.com/questions/60082481/how-to-edit-checkboxes-and-save-changes-in-an-editable-pdf-using-the-python-pdfr
-#
-# Test in: Chrome, Firefox, Safari, Apple Preview and Acrobat Reader.
-# When testing generated PDFs, testing must include using the browser to open and view the PDFs.
-# Chrome and Firefox seem to have similar behavior while Safari and Apple Preview behvave similarly.
-# For example, Apple will show a checked AcroForm checkbox field when an annotation's AP has been set to ""
-# while Chrome and Firefox won't.
-#
-# Note: when printing pdfrw objects to screen during debugging, not all attributes are displayed. Stream objects
-# can have many more nested properties.
-# Process to create the map:
-# 1. Open the PDF in Acrobat.
-# 2. Click on "Prepare Form". This will add all of the form's fields and
-#    make them available via Root.AcroForm.Fields in the PDF encoding. In addition,
-#    annotations will be created for the corresponding fields.
-# 3. Adjust any fields as necessary, ex. move "(Address)" up to the
-#    correct line. Sometimes a AcroForm.Field is created, but no annotation
-#    is assocated with it, ex "undefined" field that has no label. In this
-#    case, delete the filed and create a new text field via the
-#    "Add a new text field" button. Also, if there are fields with the same
-#    names, then they wont' get annotations and would need to be renamed.
-# 4. Save this as a new PDF.
-# 5. Add to expungeservice/files/ folder.
+"""
+https://westhealth.github.io/exploring-fillable-forms-with-pdfrw.html
+https://akdux.com/python/2020/10/31/python-fill-pdf-files/
+https://stackoverflow.com/questions/60082481/how-to-edit-checkboxes-and-save-changes-in-an-editable-pdf-using-the-python-pdfr
+
+* The PDF fields can be manually named using Acrobat and the source_data
+property can be inferred from the field name. For example, a field labeled
+"Full Name" will be mapped to `source_data.full_name`.
+
+However, PDF annotation fields should have unique names. So for forms that have repeat
+field names, append `---[unique_character_sequence]` to the field name. Ex:
+"Full Name---2" will also be mapped to `source_data.full_name`. (The `unique_character_sequence`
+does not affect the source_data mapping.)
+
+* If a value is not found, the supplementary mapping will be used.
+
+* When testing, test in Chrome, Firefox, Safari, Apple Preview and Acrobat Reader.
+Chrome and Firefox seem to have similar behavior while Safari and Apple Preview behvave similarly.
+For example, Apple will show a checked AcroForm checkbox field when an annotation's AP has been set to ""
+while Chrome and Firefox won't.
+
+Note: when printing pdfrw objects to screen during debugging, not all attributes are displayed. Stream objects
+can have many more nested properties.
+"""
+
+
 class PDFFieldMapper(UserDict):
-    """
-    * The PDF fields can be manually named using Acrobat and the source_data
-    property can be inferred from the field name. For example, a field labeled
-    "Full Name" will be mapped to `source_data.full_name`.
-
-    However, PDF annotation fields should have unique names. So for forms that have repeat
-    field names, append `***[unique_character_sequence]` to the field name. Ex:
-    "Full Name---2" will also be mapped to `source_data.full_name`. (The `unique_character_sequence`
-    does not affect the source_data mapping.)
-
-    * If a value is not found, the supplementary mapping will be used.
-    """
+    string_for_duplicates = "---"
 
     def __init__(self, pdf_source_path: str, source_data: UserInfo):
         super().__init__()
@@ -314,11 +303,28 @@ class PDFFieldMapper(UserDict):
         self.data = self.extra_mappings()
 
     def __getitem__(self, key):
-        attr = key[1:-1].lower().replace(" ", "_").split("---")[0]
+        attr = key[1:-1].lower().replace(" ", "_").split(self.string_for_duplicates)[0]
         try:
             return getattr(self.source_data, attr)
         except:
             return super().__getitem__(key)
+
+    """
+    The oregon.pdf mapping mapped here instead of the PDF itself. Hopefully, future
+    updates to the form from the state will leave most of the fields intact and
+    only a few would need to be remapped.
+    Process to create the extra mapping:
+    1. Open the PDF in Acrobat.
+    2. Click on "Prepare Form". This will add all of the form's fields and
+       make them available via Root.AcroForm.Fields and the PDF's annotations.
+    3. Adjust any fields as necessary, ex. move "(Address)" up to the
+       correct line. Sometimes a AcroForm.Field is created, but no annotation
+       is assocated with it, ex "undefined" field that has no label. In this
+       case, delete the field and create a new text field via the
+       "Add a new text field" button. Also, if there are fields with the same
+       names, then they wont' get annotations and would need to be renamed.
+    4. Save the PDF.
+    """
 
     def extra_mappings(self):
         s = self.source_data
@@ -448,9 +454,6 @@ class PDF:
                 self.set_text_value(annotation, new_value)
 
         self._pdf.Root.AcroForm.update(PdfDict(NeedAppearances=PdfObject("true")))
-
-    def add_pages(self, pdf):
-        self.writer.addpages(pdf._pdf.pages)
 
     def add_text(self, text):
         _pdf = PdfReader(fdata=MarkdownToPDF.to_pdf("Addendum", text))
