@@ -82,7 +82,7 @@ def test_normal_conviction_uses_multnomah_conviction_form():
 #########################################
 
 
-class TestJohnCommonIntegration:
+class TestJohnCommonBuildZip:
     filename = "oregon.pdf"
     BASE_DIR = os.path.join(Path(__file__).parent.parent, "expungeservice", "files")
     expected_form_values = oregon_john_common_pdf_fields
@@ -118,6 +118,7 @@ class TestJohnCommonIntegration:
 
         FormFilling.build_zip(record_summary, user_information)
 
+        # Check PDF form fields are correct.
         addpages_call_args_list = MockPdfWriter.return_value.addpages.call_args_list
         for i, args_list in enumerate(addpages_call_args_list):
             document_id = "document_" + str(i)
@@ -127,6 +128,7 @@ class TestJohnCommonIntegration:
                 for annotation in page.Annots or []:
                     assert self.expected_form_values[document_id][idx][annotation.T] == annotation.V, annotation.T
 
+        # Check PDF writer write paths.
         pdf_write_call_args_list = MockPdfWriter.return_value.write.call_args_list
         file_paths = [pdf_write_call_args_list[i][0][0] for i, _ in enumerate(pdf_write_call_args_list)]
         expected_file_paths = [
@@ -137,6 +139,7 @@ class TestJohnCommonIntegration:
         ]
         assert set(file_paths) == set(expected_file_paths)
 
+        # Check zip write paths.
         zip_write_call_args_list = MockZipFile.return_value.write.call_args_list
         zip_write_args = [zip_write_call_args_list[i][0] for i, _ in enumerate(zip_write_call_args_list)]
         expected_zip_write_args = [
@@ -151,22 +154,22 @@ class TestJohnCommonIntegration:
 IntegrationResult = Dict[str, Any]
 
 
-class TestJohnCommonArrestIntegration(TestJohnCommonIntegration):
+class TestJohnCommonArrestBuildZip(TestJohnCommonBuildZip):
     filename = "oregon_arrest.pdf"
     expected_form_values: IntegrationResult = oregon_arrest_john_common_pdf_fields
 
 
-class TestJohnCommonConvictionIntegration(TestJohnCommonIntegration):
+class TestJohnCommonConvictionBuildZip(TestJohnCommonBuildZip):
     filename = "oregon_conviction.pdf"
     expected_form_values: IntegrationResult = oregon_conviction_john_common_pdf_fields
 
 
-class TestJohnCommonMultnomahArrestIntegration(TestJohnCommonIntegration):
+class TestJohnCommonMultnomahArrestBuildZip(TestJohnCommonBuildZip):
     filename = "multnomah_arrest.pdf"
     expected_form_values: IntegrationResult = multnomah_arrest_john_common_pdf_fields
 
 
-class TestJohnCommonMultnomahConvictionIntegration(TestJohnCommonIntegration):
+class TestJohnCommonMultnomahConvictionBuildZip(TestJohnCommonBuildZip):
     filename = "multnomah_conviction.pdf"
     expected_form_values: IntegrationResult = multnomah_conviction_john_common_pdf_fields
 
