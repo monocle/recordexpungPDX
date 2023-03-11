@@ -29,7 +29,7 @@ from expungeservice.util import DateWithFuture
 from tests.factories.crawler_factory import CrawlerFactory
 from tests.fixtures.case_details import CaseDetails
 from tests.fixtures.john_doe import JohnDoe
-from tests.integration.form_filling_data import (
+from tests.fixtures.form_filling_data import (
     oregon_john_common_pdf_fields,
     multnomah_arrest_john_common_pdf_fields,
     multnomah_conviction_john_common_pdf_fields,
