@@ -7,7 +7,7 @@ import pickle
 from datetime import datetime
 
 import pytest
-from unittest.mock import patch, Mock
+from unittest.mock import patch, Mock, MagicMock
 
 from expungeservice.expunger import Expunger
 from expungeservice.form_filling import FormFilling, PDF, UserInfo, CaseResults
@@ -42,7 +42,7 @@ def create_date(y, m, d):
     return DateWithFuture.fromdatetime(datetime(y, m, d))
 
 
-def assert_pdf_values(pdf: PDF, expected: Dict[str, str], opts=None):
+def assert_pdf_values(pdf: PDF, expected: Dict[str, str]):
     annotation_dict = pdf.get_annotation_dict()
 
     for key, value in expected.items():
@@ -88,7 +88,7 @@ class TestJohnCommonBuildZip:
     expected_form_values = oregon_john_common_pdf_fields
 
     @patch("expungeservice.form_filling.FormFilling._get_pdf_file_name")
-    @patch("expungeservice.form_filling.PdfWriter", autospec=True)
+    @patch("expungeservice.form_filling.PdfWriter")
     @patch("expungeservice.form_filling.ZipFile")
     @patch("expungeservice.form_filling.mkdtemp")
     def test_form_fields_are_filled(self, mock_mkdtemp, MockZipFile, MockPdfWriter, mock_get_pdf_file_name):
@@ -151,27 +151,27 @@ class TestJohnCommonBuildZip:
         assert set(zip_write_args) == set(expected_zip_write_args)
 
 
-IntegrationResult = Dict[str, Any]
+BuildZipResult = Dict[str, Any]
 
 
 class TestJohnCommonArrestBuildZip(TestJohnCommonBuildZip):
     filename = "oregon_arrest.pdf"
-    expected_form_values: IntegrationResult = oregon_arrest_john_common_pdf_fields
+    expected_form_values: BuildZipResult = oregon_arrest_john_common_pdf_fields
 
 
 class TestJohnCommonConvictionBuildZip(TestJohnCommonBuildZip):
     filename = "oregon_conviction.pdf"
-    expected_form_values: IntegrationResult = oregon_conviction_john_common_pdf_fields
+    expected_form_values: BuildZipResult = oregon_conviction_john_common_pdf_fields
 
 
 class TestJohnCommonMultnomahArrestBuildZip(TestJohnCommonBuildZip):
     filename = "multnomah_arrest.pdf"
-    expected_form_values: IntegrationResult = multnomah_arrest_john_common_pdf_fields
+    expected_form_values: BuildZipResult = multnomah_arrest_john_common_pdf_fields
 
 
 class TestJohnCommonMultnomahConvictionBuildZip(TestJohnCommonBuildZip):
     filename = "multnomah_conviction.pdf"
-    expected_form_values: IntegrationResult = multnomah_conviction_john_common_pdf_fields
+    expected_form_values: BuildZipResult = multnomah_conviction_john_common_pdf_fields
 
 
 #########################################
@@ -222,7 +222,8 @@ class TestPDFFileNameAndDownloadPath:
         self.assert_correct_download_file_path("Other", "other.pdf", has_convictions=False)
         self.assert_correct_download_file_path("Other", "other.pdf", has_convictions=True)
 
-        mock_user_info = Mock()
+        # OSP_Form
+        mock_user_info = Mock()  # not CaseResults
         file_path, file_name = FormFilling._build_download_file_path("dir", mock_user_info)
 
         assert file_name == "OSP_Form.pdf"
@@ -239,43 +240,47 @@ class TestWarningsGeneration:
         return f'\\* * The font size of "{value[1:-1]}" was shrunk to fit the bounding box of "{field_name[1:-1]}". An addendum might be required if it still doesn\'t fit.  \n'
 
     @pytest.fixture
-    def mapper(self):
-        mapper = Mock()
-        mapper.get.return_value = False
-        return mapper
+    def mapper_factory(self):
+        def factory(has_ineligible_charges=False):
+            mapper = MagicMock()
+            dict = {"(has_ineligible_charges)": has_ineligible_charges}
+            mapper.get.side_effect = dict.get
+            return mapper
+
+        return factory
 
     @pytest.fixture
     def shrunk_fields(self):
         shrunk_fields: Dict[str, str] = {}
         return shrunk_fields
 
-    def test_no_warnings_generated_if_no_ineligible_charges_or_shrunk_fields(self, mapper, shrunk_fields):
-        warnings = FormFilling._generate_warnings_text(shrunk_fields, mapper)
-        assert warnings == None
+    def test_no_warnings_generated_if_no_ineligible_charges_or_shrunk_fields(self, mapper_factory, shrunk_fields):
+        warnings = FormFilling._generate_warnings_text(shrunk_fields, mapper_factory())
+        assert warnings is None
 
-    def test_warnings_generated_if_there_are_ineligible_charges(self, mapper, shrunk_fields):
+    def test_warnings_generated_if_there_are_ineligible_charges(self, mapper_factory, shrunk_fields):
         expected = self.lead_warning
         expected += self.partial_expungement_warning
 
-        mapper.get.return_value = True
+        mapper = mapper_factory(has_ineligible_charges=True)
         warnings = FormFilling._generate_warnings_text(shrunk_fields, mapper)
         assert warnings == expected
 
-    def test_warnings_generated_if_there_are_shrunk_fields(self, mapper, shrunk_fields):
+    def test_warnings_generated_if_there_are_shrunk_fields(self, mapper_factory, shrunk_fields):
         expected = self.lead_warning
         expected += self.font_warning("(foo)", "(foo value)")
         expected += self.font_warning("(bar)", "(bar value)")
 
         shrunk_fields = {"(foo)": "(foo value)", "(bar)": "(bar value)"}
-        warnings = FormFilling._generate_warnings_text(shrunk_fields, mapper)
+        warnings = FormFilling._generate_warnings_text(shrunk_fields, mapper_factory())
         assert warnings == expected
 
-    def test_warnings_generated_if_there_are_shrunk_fields_and_ineligible_charges(self, mapper, shrunk_fields):
+    def test_warnings_generated_if_there_are_shrunk_fields_and_ineligible_charges(self, mapper_factory, shrunk_fields):
         expected = self.lead_warning
         expected += self.partial_expungement_warning
         expected += self.font_warning("(foo)", "(foo value)")
 
-        mapper = {"(has_ineligible_charges)": True}
+        mapper = mapper_factory(has_ineligible_charges=True)
         shrunk_fields = {"(foo)": "(foo value)"}
         warnings = FormFilling._generate_warnings_text(shrunk_fields, mapper)
         assert warnings == expected
@@ -322,7 +327,7 @@ class PDFTestFixtures:
     }
 
     @pytest.fixture
-    def charge(self) -> Charge:
+    def charge(self) -> Mock:
         charge = Mock(spec=Charge)
         charge.date = create_date(2020, 2, 3)
         charge.name = "a bad thing"
@@ -330,7 +335,7 @@ class PDFTestFixtures:
         return charge
 
     @pytest.fixture
-    def conviction_charge(self, charge) -> Charge:
+    def conviction_charge(self, charge: Mock) -> Mock:
         charge.expungement_result.charge_eligibility.status = ChargeEligibilityStatus.ELIGIBLE_NOW
         charge.charge_type = FelonyClassB()
         charge.disposition = Mock()
@@ -342,7 +347,7 @@ class PDFTestFixtures:
 
     @pytest.fixture
     def dismissed_charge_factory(self) -> Callable:
-        def factory(charge_year=2020, charge_month=2, charge_day=3):
+        def factory(charge_year=2020, charge_month=2, charge_day=3) -> Mock:
             charge = Mock(spec=Charge)
             charge.name = "a bad thing"
             charge.edit_status = "not delete"
@@ -356,7 +361,7 @@ class PDFTestFixtures:
         return factory
 
     @pytest.fixture
-    def case(self, charge) -> Case:
+    def case(self, charge) -> Mock:
         case = Mock(spec=Case)
         case.summary = Mock(autospec=True)
         case.summary.balance_due_in_cents = 0
@@ -368,8 +373,8 @@ class PDFTestFixtures:
         return case
 
     @pytest.fixture
-    def pdf_factory(self, case):
-        def factory(charges: List[Charge]) -> PDF:
+    def pdf_factory(self, case: Mock):
+        def factory(charges: List[Mock]) -> PDF:
             case.charges = charges
             case_results = CaseResults.build(case, self.user_data, sid="sid0")
             pdf = FormFilling._create_pdf(case_results, validate_initial_pdf_state=True)
@@ -435,7 +440,7 @@ class TestBuildOregonPDF(PDFTestFixtures):
 
     ############# tests #############
 
-    def test_oregon_base_case(self, case):
+    def test_oregon_base_case(self, case: Mock):
         new_expected_values = {
             # case_number_with_comments
             "(Case No)": "(base case number \\(charge  only\\))",
@@ -468,6 +473,7 @@ class TestBuildOregonPDF(PDFTestFixtures):
         }
         conviction_charge.charge_type = Mock()
         conviction_charge.probation_revoked = create_date(1988, 5, 3)
+
         self.assert_pdf_values(
             pdf_factory([conviction_charge]), {**self.expected_conviction_values, **new_expected_values}
         )
@@ -523,17 +529,25 @@ class TestBuildOregonPDF(PDFTestFixtures):
                 pdf_factory([conviction_charge]), {**self.expected_conviction_values, **self.expected_violation_values}
             )
 
-    def test_has_contempt_of_court(self, conviction_charge: Mock, pdf_factory: Callable):
+    def test_has_contempt_of_court_and_case_number_with_comments(self, conviction_charge: Mock, pdf_factory: Callable):
         new_expected_values = {
+            "(Case No)": "(base case number \\(charge second_part only\\))",
             "(contempt of court finding)": "/On",
         }
         conviction_charge.charge_type = ContemptOfCourt()
+        conviction_charge.ambiguous_charge_id = "first_part-second_part"
+
+        ineligible_charge = Mock(spec=Charge)
+        ineligible_charge.date = create_date(2020, 2, 3)
+        ineligible_charge.name = "an ineligible thing"
+        ineligible_charge.edit_status = "not delete"
+
         all_expected_values = {
             **self.expected_conviction_values,
             **self.expected_violation_values,
             **new_expected_values,
         }
-        self.assert_pdf_values(pdf_factory([conviction_charge]), all_expected_values)
+        self.assert_pdf_values(pdf_factory([conviction_charge, ineligible_charge]), all_expected_values)
 
     ##### charge.charge_type.severity_level #####
 
@@ -582,12 +596,12 @@ class TestBuildDouglasPDF(TestBuildOregonPDF):
     expected_arrest_order_values = {
         "(Case Number)": "(base case number)",
         "(Case Name)": "(Case Name 0)",
-        # "(Arrest Dates)": "(Feb 3, 2020)",
         "(Dismissed Arrest Dates)": "(Feb 3, 2020)",
         "(Dismissed Charges)": "(A Bad Thing)",
         "(Dismissed Dates)": "(Jun 7, 2023)",
     }
 
+    # All of the Oregon PDF should be present as well as conviction or arrest order forms.
     def assert_pdf_values(self, pdf: PDF, new_expected_values):
         all_expected_values = {**self.expected_county_data, **self.expected_base_values, **new_expected_values}
         if pdf.mapper["(has_conviction)"]:
@@ -599,6 +613,20 @@ class TestBuildDouglasPDF(TestBuildOregonPDF):
 
     def test_oregon_base_case(self):
         pass
+
+    def test_has_contempt_of_court_and_case_number_with_comments(self, conviction_charge: Mock, pdf_factory: Callable):
+        new_expected_values = {
+            "(Case No)": "(base case number)",
+            "(contempt of court finding)": "/On",
+        }
+        conviction_charge.charge_type = ContemptOfCourt()
+
+        all_expected_values = {
+            **self.expected_conviction_values,
+            **self.expected_violation_values,
+            **new_expected_values,
+        }
+        self.assert_pdf_values(pdf_factory([conviction_charge]), all_expected_values)
 
 
 class TestBuildMultnomahPDF(PDFTestFixtures):
@@ -664,9 +692,9 @@ class TestBuildMultnomahPDF(PDFTestFixtures):
         charges = [dismissed_charge_factory(2001, 4, 1), dismissed_charge_factory(2000, 3, 9)]
         assert_pdf_values(pdf_factory(charges), expected_values)
 
-    @patch("expungeservice.form_filling.PdfWriter", autospec=True)
+    @patch("expungeservice.form_filling.PdfWriter")
     def test_font_shrinking_and_pdf_write_text(self, MockPdfWriter, pdf_factory: Mock, dismissed_charge_factory: Mock):
-        name = (
+        charge_name = (
             "A.............. Very.................... Long................. Name......................"
             + "A.............. Very.................... Long................. Name......................"
         )
@@ -682,19 +710,21 @@ class TestBuildMultnomahPDF(PDFTestFixtures):
             "(State)": "(OR)",
             "(Zip Code)": "(97111)",
             "(Dismissed Arrest Dates)": "(Feb 3, 2020)",
-            "(Dismissed Charges)": f"({name})",
+            "(Dismissed Charges)": f"({charge_name})",
             "(Case Number)": "(base case number)",
             "(Full Name)": "(foo bar)",
             "(DA Number)": "(DA num 0)",
             "(Full Name---)": "(foo bar)",
         }
         charge = dismissed_charge_factory()
-        charge.name = name
-        pdf = pdf_factory([charge])
+        charge.name = charge_name
+        pdf: PDF = pdf_factory([charge])
 
-        assert pdf.shrunk_fields.get("(Dismissed Charges)") == f"({name})"
+        assert pdf.shrunk_fields.get("(Dismissed Charges)") == f"({charge_name})"
         assert len(pdf.shrunk_fields) == 1
+        assert pdf.get_annotation_dict()["(Dismissed Charges)"].DA == "(/TimesNewRoman 6 Tf 0 g)"
         assert_pdf_values(pdf, expected_values)
 
+        assert not MockPdfWriter.return_value.addpages.called
         pdf.add_text("foo text")
         assert MockPdfWriter.return_value.addpages.called

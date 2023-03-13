@@ -91,7 +91,7 @@ class Charges:
         :param Any type: Can be the following:
             * string: a charge_type.severity_level, ex. "Felony Class C"
             * class: a charge_type class, ex. FelonyClassC
-            * list: a list of string and/or classes
+            * list: a list of strings and/or classes
         """
         if isinstance(type, str):
             return any([charge.charge_type.severity_level == type for charge in self._charges])
@@ -132,9 +132,9 @@ class CaseResults(UserInfo):
     da_number: str
     arresting_agency: Optional[str] = None
 
-    @staticmethod
-    def build(case: Case, user_info_dict: Dict[str, str], sid: str):
-        return CaseResults(
+    @classmethod
+    def build(cls, case: Case, user_info_dict: Dict[str, str], sid: str):
+        return cls(
             case=case,
             sid=sid,
             county=case.summary.location,
@@ -293,7 +293,7 @@ can have many more nested properties.
 
 
 class PDFFieldMapper(UserDict):
-    string_for_duplicates = "---"
+    STRING_FOR_DUPLICATES = "---"
 
     def __init__(self, pdf_source_path: str, source_data: UserInfo):
         super().__init__()
@@ -303,14 +303,14 @@ class PDFFieldMapper(UserDict):
         self.data = self.extra_mappings()
 
     def __getitem__(self, key):
-        attr = key[1:-1].lower().replace(" ", "_").split(self.string_for_duplicates)[0]
+        attr = key[1:-1].lower().replace(" ", "_").split(self.STRING_FOR_DUPLICATES)[0]
         try:
             return getattr(self.source_data, attr)
         except:
             return super().__getitem__(key)
 
     """
-    The oregon.pdf mapping mapped here instead of the PDF itself. Hopefully, future
+    The oregon.pdf mapping is mapped here instead of the PDF itself. Hopefully, future
     updates to the form from the state will leave most of the fields intact and
     only a few would need to be remapped.
     Process to create the extra mapping:
@@ -385,9 +385,9 @@ class PDF:
     DATE_FORMAT = "%b %-d, %Y"
     STR_CONNECTOR = "; "
 
-    @staticmethod
-    def fill_form(mapper: PDFFieldMapper, should_validate=False):
-        pdf = PDF(mapper)
+    @classmethod
+    def fill_form(cls, mapper: PDFFieldMapper, should_validate=False):
+        pdf = cls(mapper)
         if should_validate:
             pdf.validate_initial_state()
 
@@ -426,8 +426,7 @@ class PDF:
             get_attr = lambda elem: elem.strftime(self.DATE_FORMAT) if isinstance(elem, DateWithFuture) else elem
             new_value = self.STR_CONNECTOR.join(get_attr(elem) for elem in value if elem)
 
-        new_value = PdfString.encode(new_value)
-        annotation.V = new_value
+        annotation.V = PdfString.encode(new_value)
         self.set_font(annotation)
         annotation.update(PdfDict(AP=""))
 
@@ -455,7 +454,7 @@ class PDF:
 
         self._pdf.Root.AcroForm.update(PdfDict(NeedAppearances=PdfObject("true")))
 
-    def add_text(self, text):
+    def add_text(self, text: str):
         _pdf = PdfReader(fdata=MarkdownToPDF.to_pdf("Addendum", text))
         self.writer.addpages(_pdf.pages)
 
