@@ -77,7 +77,7 @@ class Charges:
     def names(self) -> List[str]:
         return [charge.name.title() for charge in self._charges]
 
-    def dates(self, is_disposition=False) -> List[DateWithFuture]:
+    def dates(self, is_disposition=False, unique=True) -> List[DateWithFuture]:
         """
         Collects the dates of the charges.
 
@@ -85,7 +85,14 @@ class Charges:
             If false, the charge.date wil be returned.
         """
         dates = [charge.disposition.date if is_disposition else charge.date for charge in self._charges]
-        return list(dict.fromkeys(dates))
+
+        if unique:
+            return list(dict.fromkeys(dates))
+        else:
+            return list(dates)
+
+    def dispositions(self) -> List[str]:
+        return [charge.disposition.status for charge in self._charges]
 
     @property
     def empty(self) -> bool:
@@ -185,8 +192,27 @@ class CaseResults(UserInfo):
         return self.charges.names
 
     @property
+    def charges_list(self) -> List[Charge]:
+        return list(self.charges._charges)
+
+    @property
     def arrest_dates(self) -> List[DateWithFuture]:
+        '''
+        Duplicates are removed. Date at position i does not necessary correspond
+        to charge at position i.
+        '''
         return self.charges.dates()
+
+    @property
+    def arrest_dates_all(self) -> List[DateWithFuture]:
+        '''
+        Duplicates are kept. Date at position i corresponds to charge i.
+        '''
+        return self.charges.dates(unique=False)
+
+    @property
+    def dispositions(self) -> List[str]:
+        return self.charges.dispositions()
 
     ##### Eligible charges #####
 
@@ -403,7 +429,13 @@ class PDF:
 
     @classmethod
     def fill_form(cls, mapper: PDFFieldMapper, should_validate=False):
-        pdf = cls(mapper)
+        klass = cls
+        county = mapper.get("(County)")
+
+        if county and county.lower() == "clackamas":
+            klass = ClackamasPDF
+
+        pdf = klass(mapper)
         if should_validate:
             pdf.validate_initial_state()
 
@@ -421,13 +453,10 @@ class PDF:
         self.annotations = [annot for page in self._pdf.pages for annot in page.Annots or []]
         self.fields = {field.T: field for field in self._pdf.Root.AcroForm.Fields}
 
-    """
-    Need to update both the V and AS fields of a Btn and they should be the same.
-    The value to use is found in annotation.AP.N.keys() and not
-    necessarily "/Yes". If a new form has been made, make sure to check
-    which value to use here and redefine BUTTON_ON if needed.
-    """
-
+    # Need to update both the V and AS fields of a Btn and they should be the same.
+    # The value to use is found in annotation.AP.N.keys() and not
+    # necessarily "/Yes". If a new form has been made, make sure to check
+    # which value to use here and redefine BUTTON_ON if needed.
     def set_checkbox_on(self, annotation):
         assert self.BUTTON_ON in annotation.AP.N.keys()
         annotation.V = self.BUTTON_ON
@@ -504,9 +533,56 @@ class PDF:
         ), "[PDF] PDF fields do not match annotations"
 
 
+class ClackamasPDF(PDF):
+    FONT_SIZME_MEDIUM = "8"
+
+    def set_text_value(self, annotation, value):
+        if not self.mapper.STRING_FOR_DUPLICATES in annotation.T:
+            super().set_text_value(annotation, value)
+            return
+
+        index, is_rest = self._get_list_index(annotation)
+        if index >= len(value):
+            return
+
+        if is_rest:
+            new_value = "\n".join([f"{c.name},   {c.disposition.date.strftime(self.DATE_FORMAT)}, {c.disposition.status}" for i, c in enumerate(value) if i >= index])
+        elif isinstance(new_value, DateWithFuture):
+            new_value = new_value.strftime(self.DATE_FORMAT)
+        else:
+            new_value = value[index]
+
+        self._set_charges_font(annotation)
+        annotation.V = PdfString.encode(new_value)
+        annotation.update(PdfDict(AP=""))
+
+    def _get_list_index(self, annotation):
+        is_rest = False
+        _, index_str = annotation.T[1:-1].split(self.mapper.STRING_FOR_DUPLICATES)
+
+        if "rest" in index_str:
+            index_str = index_str.split("rest")[0]
+            is_rest = True
+            
+        return int(index_str), is_rest
+
+    def _set_charges_font(self, annotation):
+        font_size = self.FONT_SIZE
+
+        if not "Charges" in annotation.T:
+            return super().set_font(annotation)
+ 
+        if "All" in annotation.T:
+            font_size = self.FONT_SIZE_SMALL
+        else: # List
+            font_size = self.FONT_SIZME_MEDIUM
+
+        annotation.DA = PdfString.encode(f"/{self.FONT_FAMILY} {font_size} Tf 0 g")
+        
+
 class FormFilling:
     OREGON_PDF_NAME = "oregon"
-    NON_OREGON_PDF_COUNTIES = ["multnomah"]
+    NON_OREGON_PDF_COUNTIES = ["multnomah", "clackamas"]
     COUNTIES_NEEDING_CONVICTION_OR_ARREST_ORDER = ["douglas", "umatilla", "multnomah"]
     COUNTIES_NEEDING_COUNTY_SPECIFIC_DOWNLOAD_NAME = ["douglas", "umatilla"]
     OSP_PDF_NAME = "OSP_Form"
