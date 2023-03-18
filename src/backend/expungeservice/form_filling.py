@@ -542,18 +542,24 @@ class ClackamasPDF(PDF):
             return
 
         index, is_rest = self._get_list_index(annotation)
+
+        if index is None:
+            super().set_text_value(annotation, value)
+            return
+
         if index >= len(value):
             return
 
         if is_rest:
             new_value = "\n".join([f"{c.name},   {c.disposition.date.strftime(self.DATE_FORMAT)}, {c.disposition.status}" for i, c in enumerate(value) if i >= index])
-        elif isinstance(new_value, DateWithFuture):
-            new_value = new_value.strftime(self.DATE_FORMAT)
         else:
             new_value = value[index]
 
-        self._set_charges_font(annotation)
+            if isinstance(new_value, DateWithFuture):
+                new_value = new_value.strftime(self.DATE_FORMAT)
+
         annotation.V = PdfString.encode(new_value)
+        self._set_charges_font(annotation)
         annotation.update(PdfDict(AP=""))
 
     def _get_list_index(self, annotation):
@@ -563,8 +569,9 @@ class ClackamasPDF(PDF):
         if "rest" in index_str:
             index_str = index_str.split("rest")[0]
             is_rest = True
-            
-        return int(index_str), is_rest
+
+        idx = None if index_str == "" else int(index_str)
+        return idx, is_rest
 
     def _set_charges_font(self, annotation):
         font_size = self.FONT_SIZE
