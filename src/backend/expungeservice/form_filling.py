@@ -192,29 +192,33 @@ class CaseResults(UserInfo):
         return self.charges.names
 
     @property
-    def charges_list(self) -> List[Charge]:
-        return list(self.charges._charges)
-
-    @property
     def arrest_dates(self) -> List[DateWithFuture]:
-        '''
+        """
         Duplicates are removed. Date at position i does not necessary correspond
         to charge at position i.
-        '''
+        """
         return self.charges.dates()
 
-    @property
-    def arrest_dates_all(self) -> List[DateWithFuture]:
-        '''
-        Duplicates are kept. Date at position i corresponds to charge i.
-        '''
-        return self.charges.dates(unique=False)
-
-    @property
-    def dispositions(self) -> List[str]:
-        return self.charges.dispositions()
-
     ##### Eligible charges #####
+
+    @property
+    def eligible_charge_names(self) -> List[str]:
+        return self.eligible_charges.names
+
+    @property
+    def eligible_charges_list(self) -> List[Charge]:
+        return list(self.eligible_charges._charges)
+
+    @property
+    def eligible_arrest_dates_all(self) -> List[DateWithFuture]:
+        """
+        Duplicates are kept. Date at position i corresponds to charge i.
+        """
+        return self.eligible_charges.dates(unique=False)
+
+    @property
+    def eligible_dispositions(self) -> List[str]:
+        return self.eligible_charges.dispositions()
 
     @property
     def short_eligible_ids(self) -> List[str]:
@@ -534,7 +538,7 @@ class PDF:
 
 
 class ClackamasPDF(PDF):
-    FONT_SIZME_MEDIUM = "8"
+    FONT_SIZE_MEDIUM = "8"
 
     def set_text_value(self, annotation, value):
         if not self.mapper.STRING_FOR_DUPLICATES in annotation.T:
@@ -551,7 +555,13 @@ class ClackamasPDF(PDF):
             return
 
         if is_rest:
-            new_value = "\n".join([f"{c.name},   {c.disposition.date.strftime(self.DATE_FORMAT)}, {c.disposition.status}" for i, c in enumerate(value) if i >= index])
+            new_value = "\n".join(
+                [
+                    f"{c.name},   {c.disposition.date.strftime(self.DATE_FORMAT)}, {c.disposition.status}"
+                    for i, c in enumerate(value)
+                    if i >= index
+                ]
+            )
         else:
             new_value = value[index]
 
@@ -563,6 +573,11 @@ class ClackamasPDF(PDF):
         annotation.update(PdfDict(AP=""))
 
     def _get_list_index(self, annotation):
+        """
+        Parse annotation names in the form:
+        "(Eligible Charge Names---1)"
+        "(Eligible Charges List---2rest)"
+        """
         is_rest = False
         _, index_str = annotation.T[1:-1].split(self.mapper.STRING_FOR_DUPLICATES)
 
@@ -576,16 +591,16 @@ class ClackamasPDF(PDF):
     def _set_charges_font(self, annotation):
         font_size = self.FONT_SIZE
 
-        if not "Charges" in annotation.T:
+        if not "Eligible Charge" in annotation.T:
             return super().set_font(annotation)
- 
-        if "All" in annotation.T:
+
+        if "Names" in annotation.T:
             font_size = self.FONT_SIZE_SMALL
-        else: # List
-            font_size = self.FONT_SIZME_MEDIUM
+        else:  # List
+            font_size = self.FONT_SIZE_MEDIUM
 
         annotation.DA = PdfString.encode(f"/{self.FONT_FAMILY} {font_size} Tf 0 g")
-        
+
 
 class FormFilling:
     OREGON_PDF_NAME = "oregon"

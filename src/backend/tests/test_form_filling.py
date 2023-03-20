@@ -756,20 +756,28 @@ class TestBuildClackamsPDF(TestBuildOregonPDF):
         "(conviction)": "/On",
         "(ORS 137225 does not prohibit a setaside of this conviction see Instructions)": "/On",
         "(I have fully completed complied with or performed all terms of the sentence of the court)": "/On",
-
         # Clackamas order
-        "(Charges All---0)": "(Aggravated Theft In The First Degree)",
-        "(Arrest Dates All---0)": "(Feb 3, 2020)",
-        "(Dispositions---0)": "(Convicted)",
+        "(Eligible Charge Names---0)": "(Aggravated Theft In The First Degree)",
+        "(Eligible Arrest Dates All---0)": "(Feb 3, 2020)",
+        "(Eligible Dispositions---0)": "(Convicted)",
     }
 
     def assert_pdf_values(self, pdf: PDF, new_expected_values):
-        all_expected_values = {**self.expected_county_data, **self.expected_base_values, **self.expected_clackamas_order_values, **new_expected_values}
+        all_expected_values = {
+            **self.expected_county_data,
+            **self.expected_base_values,
+            **self.expected_clackamas_order_values,
+            **new_expected_values,
+        }
         assert_pdf_values(pdf, all_expected_values)
 
     @pytest.fixture
     def conviction_charge_factory(self) -> Callable:
-        def factory(name="Aggravated Theft in the First Degree", charge_type=FelonyClassB(), disposition_status=DispositionStatus.CONVICTED):
+        def factory(
+            name="Aggravated Theft in the First Degree",
+            charge_type=FelonyClassB(),
+            disposition_status=DispositionStatus.CONVICTED,
+        ):
             charge = Mock(spec=Charge)
             charge.date = create_date(2020, 2, 3)
             charge.name = name
@@ -803,15 +811,14 @@ class TestBuildClackamsPDF(TestBuildOregonPDF):
         charge_disposition = "Convicted"
         rest_charges_str = "\n".join([f"{charge_name}{i},   {charge_date}, {charge_disposition}" for i in range(1, 50)])
         expected_values = {
-            "(Charges All---1)": "(Person Under 21 Attempt To Purchase Alcoholic Beverages  Reduced - Da Elected 0)",
-            "(Arrest Dates All---1)": "(Feb 3, 2020)",
-            "(Dispositions---1)": "(Convicted)",
-            "(Charges List---2rest)": "(" + rest_charges_str + ")"
+            "(Eligible Charge Names---1)": "(Person Under 21 Attempt To Purchase Alcoholic Beverages  Reduced - Da Elected 0)",
+            "(Eligible Arrest Dates All---1)": "(Feb 3, 2020)",
+            "(Eligible Dispositions---1)": "(Convicted)",
+            "(Eligible Charges List---2rest)": "(" + rest_charges_str + ")",
         }
+        pdf.write("foo_test.pdf")
 
         self.assert_pdf_values(pdf, {**self.expected_conviction_values, **expected_values})
-
-    ##### Fixed inherited tests #####
 
     def test_has_no_complaint_has_dismissed(self, conviction_charge_factory: Callable, pdf_factory: Callable):
         new_expected_values = {
@@ -819,11 +826,10 @@ class TestBuildClackamsPDF(TestBuildOregonPDF):
             "(no accusatory instrument was filed and at least 60 days have passed since the)": "/On",
             "(an accusatory instrument was filed and I was acquitted or the case was dismissed)": "/On",
             "(record of citation or charge that was dismissedacquitted)": "/On",
-            
             "(Case No)": "(base case number)",
-            "(Charges All---0)": "(Aggravated Theft In The First Degree)",
-            "(Arrest Dates All---0)": "(Feb 3, 2020)",
-            "(Dispositions---0)": "(Dismissed)",
+            "(Eligible Charge Names---0)": "(Aggravated Theft In The First Degree)",
+            "(Eligible Arrest Dates All---0)": "(Feb 3, 2020)",
+            "(Eligible Dispositions---0)": "(Dismissed)",
         }
         charge = conviction_charge_factory(disposition_status=DispositionStatus.DISMISSED)
         charge.disposition.date = create_date(2023, 6, 7)
@@ -834,20 +840,5 @@ class TestBuildClackamsPDF(TestBuildOregonPDF):
 
         self.assert_pdf_values(pdf_factory([charge]), new_expected_values)
 
-    def test_has_contempt_of_court(self, conviction_charge: Mock, pdf_factory: Callable):
-        new_expected_values = {
-            "(contempt of court finding)": "/On",
-        }
-        conviction_charge.charge_type = ContemptOfCourt()
-        all_expected_values = {
-            **self.expected_conviction_values,
-            **self.expected_violation_values,
-            **new_expected_values,
-        }
-        self.assert_pdf_values(pdf_factory([conviction_charge]), all_expected_values)
-
     def test_oregon_base_case(self, case: Mock):
-        pass
-
-    def test_has_contempt_of_court_and_case_number_with_comments(self, conviction_charge: Mock, pdf_factory: Callable):
         pass
