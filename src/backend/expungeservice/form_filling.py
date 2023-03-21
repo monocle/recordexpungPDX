@@ -541,10 +541,6 @@ class ClackamasPDF(PDF):
     FONT_SIZE_MEDIUM = "8"
 
     def set_text_value(self, annotation, value):
-        if not self.mapper.STRING_FOR_DUPLICATES in annotation.T:
-            super().set_text_value(annotation, value)
-            return
-
         index, is_rest = self._get_list_index(annotation)
 
         if index is None:
@@ -562,30 +558,31 @@ class ClackamasPDF(PDF):
                     if i >= index
                 ]
             )
+        elif isinstance(value[index], DateWithFuture):
+            new_value = value[index].strftime(self.DATE_FORMAT)
         else:
             new_value = value[index]
-
-            if isinstance(new_value, DateWithFuture):
-                new_value = new_value.strftime(self.DATE_FORMAT)
 
         annotation.V = PdfString.encode(new_value)
         self._set_charges_font(annotation)
         annotation.update(PdfDict(AP=""))
 
-    def _get_list_index(self, annotation):
+    def _get_list_index(self, annotation) -> Tuple[Optional[int], bool]:
         """
-        Parse annotation names in the form:
-        "(Eligible Charge Names---1)"
-        "(Eligible Charges List---2rest)"
+        Parses annotation names and returns the index and whether there
+        is a "rest" parameter. Ex,
+        "(Full Name---)"                  -> (None, False)
+        "(Eligible Charge Names---1)"     -> (1, False)
+        "(Eligible Charges List---2rest)" -> (2, True)
         """
-        is_rest = False
-        _, index_str = annotation.T[1:-1].split(self.mapper.STRING_FOR_DUPLICATES)
+        split_str = annotation.T[1:-1].split(self.mapper.STRING_FOR_DUPLICATES)
 
-        if "rest" in index_str:
-            index_str = index_str.split("rest")[0]
-            is_rest = True
+        if len(split_str) < 2:
+            return None, False
 
-        idx = None if index_str == "" else int(index_str)
+        index_str = split_str[1]
+        is_rest = "rest" in index_str
+        idx = None if index_str == "" else int(index_str.split("rest")[0])
         return idx, is_rest
 
     def _set_charges_font(self, annotation):

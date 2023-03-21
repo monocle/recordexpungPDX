@@ -816,7 +816,6 @@ class TestBuildClackamsPDF(TestBuildOregonPDF):
             "(Eligible Dispositions---1)": "(Convicted)",
             "(Eligible Charges List---2rest)": "(" + rest_charges_str + ")",
         }
-        pdf.write("foo_test.pdf")
 
         self.assert_pdf_values(pdf, {**self.expected_conviction_values, **expected_values})
 
